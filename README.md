@@ -50,3 +50,6 @@ Once you've browsed to here, you can select the options.
 
 ## Verifying the Results:
 Since this is postman and more sophisticated autmation tools, you are reliant on the output to verify that these actions have been completed successfully.
+
+### Inherited Works
+Most of the Mist API calls come from the Thomas Munzer Mist Postman collection.  They have been modified to with additional tests and scripts.
