@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "7c5e16bb-b170-458e-b50f-7682109f1803",
+		"_postman_id": "8111ab86-8014-49cb-8551-e9217e96cd25",
 		"name": "Mist Runner Collections",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -15,10 +15,10 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "7102b73d-e4d7-4c8a-9c3c-414f3e069ca9",
+								"id": "820dcf5d-9d01-4ee5-a515-0e703036506b",
 								"exec": [
 									"var encoded = encodeURIComponent(pm.environment.get(\"site_address\") );",
-									"postman.setEnvironmentVariable(\"site_address\", encoded);",
+									"pm.collectionVariables.set(\"site_address\", encoded);",
 									""
 								],
 								"type": "text/javascript"
@@ -27,9 +27,15 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c7db6d6f-3301-4e4c-83a4-eb2d405f1064",
+								"id": "76c1599a-456f-4eda-a394-9aef4bdb1c27",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
+									"pm.test(\"Status code is 200\", function() {",
+									"  pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"pm.test(\"Results is not empty\", function() {",
+									"  pm.expect(jsonData.results).length >= 1;",
+									"});",
 									"pm.environment.set(\"formatted_address\", jsonData.results[0].formatted_address)",
 									"pm.environment.set(\"lat\", parseFloat(jsonData.results[0].geometry.location.lat))",
 									"pm.environment.set(\"lng\", parseFloat(jsonData.results[0].geometry.location.lng))"
@@ -93,10 +99,16 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "eb9d2e2f-f4cb-4b16-9dd6-8e92d155ce9b",
+								"id": "eac3c302-2690-4a83-a480-56af5d5cd8f6",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"pm.environment.set(\"time_zone\", jsonData.timeZoneId)",
+									"pm.test(\"Status code is 200\", function() {",
+									"  pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"pm.test(\"TimeZoneID is present\", function() {",
+									"  pm.expect(jsonData).to.have.property(\"timeZoneId\");",
+									"});",
+									"pm.collectionVariables.set(\"time_zone\", jsonData.timeZoneId)",
 									""
 								],
 								"type": "text/javascript"
@@ -142,17 +154,123 @@
 					"response": []
 				},
 				{
+					"name": "getOrgSites_CheckDuplicate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "05fffd6c-7623-421a-95e3-676f684f3620",
+								"exec": [
+									"var nextRequest = \"createOrgSite\"",
+									"var foundDup = false",
+									"var jsonData = JSON.parse(responseBody);",
+									"for (var i = 0; i < jsonData.length; i++) {",
+									"    if (jsonData[i].name == pm.variables.get(\"site_name\")) {",
+									"        console.log(\"Found Duplicate Site\")",
+									"        foundDup = true",
+									"        }",
+									"};",
+									"",
+									"pm.test(\"Verify site_name does not exist\", function(){",
+									"    pm.expect(foundDup).to.eql(false);",
+									"});",
+									"if (foundDup == true){",
+									"     nextRequest = null",
+									"};",
+									"",
+									"",
+									"console.log(nextRequest)",
+									"postman.setNextRequest(nextRequest);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":orgr_id",
+								"sites"
+							],
+							"variable": [
+								{
+									"key": "orgr_id",
+									"type": "string",
+									"value": "{{org_id}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "ok",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "",
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+						}
+					]
+				},
+				{
 					"name": "createOrgSite",
 					"event": [
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "dca9d3d5-bd87-4a46-97d0-f743f4e3a74c",
+								"id": "45dcdd51-984e-4b47-9fcb-bee6faf87ef5",
 								"exec": [
-									"var Body = {",
-									"    \"name\": \"{{site_name}}\",",
-									"    ",
-									"}"
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "eec511bd-75d0-4a0c-9aec-09981eaa403c",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.test(\"Status code is 200\", function() {",
+									"  pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"pm.test(\"Site ID  is present\", function() {",
+									"  pm.expect(jsonData).to.have.property(\"id\");",
+									"});",
+									"pm.test(\"Name matches CSV\", function() {",
+									"  pm.expect(jsonData.name).to.equal(pm.variables.get(\"site_name\"));",
+									"});",
+									"",
+									"pm.collectionVariables.unset(\"site_address\")",
+									"pm.collectionVariables.unset(\"lat\")",
+									"pm.collectionVariables.unset(\"lng\")",
+									"pm.collectionVariables.unset(\"formatted_address\")",
+									"pm.collectionVariables.unset(\"time_zone\")",
+									"pm.collectionVariables.unset(\"device_id\")"
 								],
 								"type": "text/javascript"
 							}
@@ -281,7 +399,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "8c7de6e6-093f-4e76-be5c-b1b4c420e7eb",
+						"id": "6a6b75f9-9424-4df5-abc1-2a741de087dc",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -291,7 +409,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "30c21860-181f-471b-a583-49d7e6c72afe",
+						"id": "22e6aa2c-c94f-4dba-98b2-db3114ad592b",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -310,11 +428,16 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "71669382-d9c5-48a3-8af3-7fc5eb181762",
+								"id": "63fc75a9-2e2c-40d6-b760-dfb3b3146f80",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"pm.collectionVariables.set(\"site_id\", jsonData[0].site_id)",
-									"pm.collectionVariables.set(\"device_id\", jsonData[0].id)"
+									"for (var i = 0; i < jsonData.length; i++){",
+									"    if (jsonData[i].mac == pm.variables.get(\"mac_address\")){",
+									"        pm.collectionVariables.set(\"device_id\", jsonData[i].id);",
+									"        console.log(\"id = \" + jsonData[i].id)",
+									"    };",
+									"};",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -387,16 +510,17 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c886fb5e-60dd-4d66-a875-3880e7f41eca",
+								"id": "0039f423-8bcc-4259-ae42-76f654fd6cfa",
 								"exec": [
 									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code is 200\", function() {",
+									"  pm.expect(pm.response.code).to.equal(200);",
+									"});",
 									"for(let i = 0; i < jsonData.length; i++){",
 									"if(jsonData[i].name == pm.variables.get(\"site_name\")){",
-									"    pm.environment.set(\"site_id\", jsonData[i].id)",
-									"    console.log(\"Site ID = \" + jsonData[i].id)",
-									"    console.log(\"Site ID = \" + pm.variables.get(\"site_id\"))",
-									"}",
-									"}"
+									"    pm.collectionVariables.set(\"site_id\", jsonData[i].id);",
+									"};",
+									"};"
 								],
 								"type": "text/javascript"
 							}
@@ -468,11 +592,13 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "c6d0ab82-58f9-41f9-831e-79f80c7c6155",
+								"id": "7f18d71d-c935-4596-9071-b1e5cbff8963",
 								"exec": [
-									"pm.environment.set(\"force_reassignment_bool\", (pm.variables.get(\"force_reassignment\") == \"true\"))",
+									"pm.environment.set(\"no_reassignment_bool\", (pm.variables.get(\"no_reassignment\") == \"true\"))",
 									"console.log(\"Site ID = \" + pm.collectionVariables.get(\"site_id\"))",
-									"console.log(pm.collectionVariables.get(\"force_reassignment_bool\"))"
+									"console.log(pm.collectionVariables.get(\"no_reassignment_bool\"))",
+									"",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -480,13 +606,19 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "708d506c-c1bd-41da-a4bc-e91a9265d0f7",
+								"id": "b9dacd92-90c0-4a83-bd8f-1203f765d65f",
 								"exec": [
-									"pm.test(\"Verify that is not error\", () => {",
-									"    let jsonData = pm.response.json()",
-									"    pm.expect(jsonData.error.length).to.eql(0)",
-									"    pm.expect(jsonData.success.length).to.eql(1)",
-									"});"
+									"var jsonData = pm.response.json()",
+									"pm.test(\"Verify that error length is 0\", () => {",
+									"    pm.expect(jsonData.error.length).to.eql(0);",
+									"});",
+									"pm.test(\"Verify that success length is 1\", () => {",
+									"    pm.expect(jsonData.success.length).to.eql(1);",
+									"});",
+									"",
+									"pm.collectionVariables.unset(\"site_id\")",
+									"pm.collectionVariables.unset(\"mac_address\")",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -513,7 +645,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"op\": \"assign\",\n    \"site_id\": \"{{site_id}}\",\n    \"macs\": [\n        \"{{mac_address}}\"\n    ],\n    \"no_reassign\": {{force_reassignment_bool}}\n}",
+							"raw": "{\n    \"op\": \"assign\",\n    \"site_id\": \"{{site_id}}\",\n    \"macs\": [\n        \"{{mac_address}}\"\n    ],\n    \"no_reassign\": {{no_reassignment_bool}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -584,7 +716,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "cff0cc6d-6201-42ca-9ac4-d9dc92a99db9",
+						"id": "6822a2cf-c7ab-4382-b910-03ca8814ba8a",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -594,7 +726,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "c6622cea-506f-4678-8179-0fb0b8dc232b",
+						"id": "77e247fc-2f83-4538-bea5-417a52e23a39",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -613,11 +745,11 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8fb5c0c4-bd5e-45b6-9e64-128c1e10b7f3",
+								"id": "fc30b757-1f54-4ee5-b22a-be2db067542a",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"pm.environment.set(\"site_id\", jsonData[0].site_id)",
-									"pm.environment.set(\"device_id\", jsonData[0].id)"
+									"pm.collectionVariables.set(\"site_id\", jsonData[0].site_id)",
+									"pm.collectionVariables.set(\"device_id\", jsonData[0].id)"
 								],
 								"type": "text/javascript"
 							}
@@ -696,14 +828,15 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0ec292ee-23ec-4a67-861b-f8b3ba597680",
+								"id": "5de6868e-ac50-447c-9372-79573c2a5b06",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"pm.test(\"Test that Name shows in response\", function() {",
+									"pm.test(\"Response Shows Name set\", function() {",
 									"    pm.expect(jsonData.name == pm.variables.get(\"device_name\"))",
 									"});",
 									"",
 									"pm.collectionVariables.unset(\"device_id\")",
+									"pm.collectionVariables.unset(\"site_id\")",
 									"pm.collectionVariables.unset(\"force_reassignment_bool\")"
 								],
 								"type": "text/javascript"
@@ -795,7 +928,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "85ee88aa-80e2-4d3b-9953-006c0bc43559",
+						"id": "acd20f4a-3177-41cd-9085-1f3ea18ddfe3",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -805,7 +938,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "0052a01e-0492-4606-be3f-be054efb53f8",
+						"id": "28b22093-b515-486b-8837-cbbb199c96a6",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -835,7 +968,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "aee933b1-b518-4743-b4f6-6846131fb1ec",
+				"id": "b389e36e-71d0-4a84-940d-ad5c91e13ede",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -845,7 +978,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "b0c9bc25-899a-409c-8ccc-2ac997bcd766",
+				"id": "531040ef-1820-4a01-abb5-94d86cbfe46d",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -855,63 +988,38 @@
 	],
 	"variable": [
 		{
-			"id": "44bf8bea-b0d3-4137-9a67-f3acce8f46af",
+			"id": "2e39944e-d3b0-4cfb-b96c-5710047a2056",
 			"key": "google_api_key",
 			"value": ""
 		},
 		{
-			"id": "fa36e371-b80d-4f07-99e4-642c7ddb63f9",
+			"id": "0434eb63-b0a0-4547-b995-142b7aa6ed7e",
 			"key": "site_name",
 			"value": ""
 		},
 		{
-			"id": "c438118e-d21c-4826-a2ab-184ae4ea0a2b",
-			"key": "site_address",
-			"value": ""
-		},
-		{
-			"id": "7d731965-85eb-4617-a691-acc67e299dba",
-			"key": "formatted_address",
-			"value": ""
-		},
-		{
-			"id": "05422f1f-e85b-4054-9f09-a91e6ef65399",
-			"key": "lat",
-			"value": ""
-		},
-		{
-			"id": "d177d913-7c74-4ac9-9c0e-592f0eac8cd1",
-			"key": "lng",
-			"value": ""
-		},
-		{
-			"id": "63ff4477-1c50-4f7c-aeb5-6d090712e85a",
+			"id": "a6a6376d-150a-44b7-929b-fe27702dc792",
 			"key": "apitoken",
 			"value": ""
 		},
 		{
-			"id": "442751f8-feae-4494-91ac-e29439ff3919",
-			"key": "mac_address",
-			"value": ""
-		},
-		{
-			"id": "8b67b630-8479-4893-b56a-3054bd4c7ba4",
+			"id": "999c9061-1fe8-4a11-a58e-6a253da62a2c",
 			"key": "device_name",
 			"value": ""
 		},
 		{
-			"id": "233752fd-a49b-4d30-98ca-2afbeeab62fd",
-			"key": "site_id",
-			"value": ""
-		},
-		{
-			"id": "0942287d-d7a7-402d-b659-00ce1275932b",
+			"id": "726fa9b9-5c70-4db0-bbd2-9fdd9c4de233",
 			"key": "host",
 			"value": "api.mist.com"
 		},
 		{
-			"id": "b1ba4ee6-4374-4a3f-bb70-036c4bf2e797",
+			"id": "e0783665-529e-40cd-9dfa-e0dad8426354",
 			"key": "force_reassignment",
+			"value": ""
+		},
+		{
+			"id": "ebf2784b-c4bd-4e96-a153-c4f661ec8258",
+			"key": "device_id",
 			"value": ""
 		}
 	],
