@@ -25,6 +25,9 @@ You can download this file directly, or clone the git repo which includes some e
 ## Dealing with Variables
 These collection use a tremendous number of environmental variables to make things work.
 Typically, each folder containing and automation will define which variables it needs.  These can be set multiple ways.
+Current required variables are:
+- apitoken
+- org_id
 
 ### Environmental Variables
 The preferred method for setting these variables is through an environment.  Most of the collection will require an `{{apitoken}}` and an `{{org_id}}` to be defined.  You can create a new Environment and define/set these variables.
@@ -50,6 +53,7 @@ Once you've browsed to here, you can select the options.
 
 ## Verifying the Results:
 Since this is postman and more sophisticated autmation tools, you are reliant on the output to verify that these actions have been completed successfully.
+(Update) I have attempted to do some validation of results with the testing features.  During Runner execution you should see test failing if some assumptions aren't met.
 
 ### Inherited Works
 Most of the Mist API calls come from the Thomas Munzer Mist Postman collection.  They have been modified to with additional tests and scripts.
