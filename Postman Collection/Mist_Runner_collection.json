@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8b050796-c961-4151-9882-e3d00aff0467",
+		"_postman_id": "7c5e16bb-b170-458e-b50f-7682109f1803",
 		"name": "Mist Runner Collections",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -15,7 +15,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "71df0efe-fbfb-414b-90e3-0c0a38d2e9d4",
+								"id": "7102b73d-e4d7-4c8a-9c3c-414f3e069ca9",
 								"exec": [
 									"var encoded = encodeURIComponent(pm.environment.get(\"site_address\") );",
 									"postman.setEnvironmentVariable(\"site_address\", encoded);",
@@ -27,7 +27,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "55017d5d-08f5-49f1-8a68-07cd76bdaebe",
+								"id": "c7db6d6f-3301-4e4c-83a4-eb2d405f1064",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
 									"pm.environment.set(\"formatted_address\", jsonData.results[0].formatted_address)",
@@ -93,7 +93,7 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7ba78776-787f-42b3-80a5-94139effbcb2",
+								"id": "eb9d2e2f-f4cb-4b16-9dd6-8e92d155ce9b",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
 									"pm.environment.set(\"time_zone\", jsonData.timeZoneId)",
@@ -104,6 +104,9 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -144,7 +147,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "55e99890-78ab-4a18-9dbb-aee949539e0a",
+								"id": "dca9d3d5-bd87-4a46-97d0-f743f4e3a74c",
 								"exec": [
 									"var Body = {",
 									"    \"name\": \"{{site_name}}\",",
@@ -278,7 +281,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "87567fef-4cf0-4462-b8f4-9293df673909",
+						"id": "8c7de6e6-093f-4e76-be5c-b1b4c420e7eb",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -288,7 +291,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "89f89ed6-42f2-4e39-a5aa-a34a51059b73",
+						"id": "30c21860-181f-471b-a583-49d7e6c72afe",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -299,10 +302,24 @@
 			"protocolProfileBehavior": {}
 		},
 		{
-			"name": "AP Naming",
+			"name": "Inventory Assignment",
 			"item": [
 				{
-					"name": "getOrgInventory",
+					"name": "getOrgInventory_Assignment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "71669382-d9c5-48a3-8af3-7fc5eb181762",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"site_id\", jsonData[0].site_id)",
+									"pm.collectionVariables.set(\"device_id\", jsonData[0].id)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -365,7 +382,334 @@
 					]
 				},
 				{
+					"name": "getOrgSitesByName",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c886fb5e-60dd-4d66-a875-3880e7f41eca",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"for(let i = 0; i < jsonData.length; i++){",
+									"if(jsonData[i].name == pm.variables.get(\"site_name\")){",
+									"    pm.environment.set(\"site_id\", jsonData[i].id)",
+									"    console.log(\"Site ID = \" + jsonData[i].id)",
+									"    console.log(\"Site ID = \" + pm.variables.get(\"site_id\"))",
+									"}",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":orgr_id",
+								"sites"
+							],
+							"variable": [
+								{
+									"key": "orgr_id",
+									"value": "{{org_id}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "ok",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":orgr_id",
+										"sites"
+									],
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "assignOrgInventoryToSite",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "c6d0ab82-58f9-41f9-831e-79f80c7c6155",
+								"exec": [
+									"pm.environment.set(\"force_reassignment_bool\", (pm.variables.get(\"force_reassignment\") == \"true\"))",
+									"console.log(\"Site ID = \" + pm.collectionVariables.get(\"site_id\"))",
+									"console.log(pm.collectionVariables.get(\"force_reassignment_bool\"))"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "708d506c-c1bd-41da-a4bc-e91a9265d0f7",
+								"exec": [
+									"pm.test(\"Verify that is not error\", () => {",
+									"    let jsonData = pm.response.json()",
+									"    pm.expect(jsonData.error.length).to.eql(0)",
+									"    pm.expect(jsonData.success.length).to.eql(1)",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "X-CSRFToken",
+								"type": "text",
+								"value": "{{csrftoken}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"op\": \"assign\",\n    \"site_id\": \"{{site_id}}\",\n    \"macs\": [\n        \"{{mac_address}}\"\n    ],\n    \"no_reassign\": {{force_reassignment_bool}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"inventory"
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}"
+								}
+							]
+						},
+						"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nop|string|Required. assign\nsite_id|string|Required. target site id\nmacs|list|list of MAC, e.g. 5c5b350e0001\nno_reassign|boolean|if true, treat site assignment against an already assigned AP as error"
+					},
+					"response": [
+						{
+							"name": "OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+									"protocol": "https",
+									"host": [
+										"{{hosts}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"op\": \"assign\",\n    \"success\": [ \"5c5b350e0001\" ],\n    \"error\": [ ]\n}"
+						}
+					]
+				}
+			],
+			"description": "This collection will use a CSV Template to assign multiple APs to a site.\n\n\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\n{{site_name}}\n{{mac_address}}\n{force_reassignment} - Should be `true` or `false`\n\n\nExample CSV:\n```\nsite_name,mac_address,force_reassignment\nsite01,aabbccddeeff,true\n```",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "cff0cc6d-6201-42ca-9ac4-d9dc92a99db9",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "c6622cea-506f-4678-8179-0fb0b8dc232b",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "AP Naming",
+			"item": [
+				{
+					"name": "getOrgInventory_Naming",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8fb5c0c4-bd5e-45b6-9e64-128c1e10b7f3",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"site_id\", jsonData[0].site_id)",
+									"pm.environment.set(\"device_id\", jsonData[0].id)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?mac={{mac_address}}",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"inventory"
+							],
+							"query": [
+								{
+									"key": "mac",
+									"value": "{{mac_address}}"
+								}
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}"
+								}
+							]
+						},
+						"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
+					},
+					"response": [
+						{
+							"name": "OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+									"protocol": "https",
+									"host": [
+										"{{hosts}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
+						}
+					]
+				},
+				{
 					"name": "renameAP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0ec292ee-23ec-4a67-861b-f8b3ba597680",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.test(\"Test that Name shows in response\", function() {",
+									"    pm.expect(jsonData.name == pm.variables.get(\"device_name\"))",
+									"});",
+									"",
+									"pm.collectionVariables.unset(\"device_id\")",
+									"pm.collectionVariables.unset(\"force_reassignment_bool\")"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "PUT",
 						"header": [],
@@ -451,7 +795,7 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "09be601d-ee6f-4a4a-9057-ad4801ef7640",
+						"id": "85ee88aa-80e2-4d3b-9953-006c0bc43559",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -461,7 +805,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "efb4409e-72d4-4695-b235-a2b6884b3da7",
+						"id": "0052a01e-0492-4606-be3f-be054efb53f8",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -477,7 +821,7 @@
 		"apikey": [
 			{
 				"key": "value",
-				"value": "Token {{apitoken}}",
+				"value": "token {{apitoken}}",
 				"type": "string"
 			},
 			{
@@ -491,7 +835,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "30c14b68-ecca-4e52-8ff6-0f0bb8044650",
+				"id": "aee933b1-b518-4743-b4f6-6846131fb1ec",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -501,7 +845,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "6303606a-e773-43ef-a385-ef5613c0f52f",
+				"id": "b0c9bc25-899a-409c-8ccc-2ac997bcd766",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -511,48 +855,63 @@
 	],
 	"variable": [
 		{
-			"id": "47a969d3-bb88-4fec-a24c-d8be3d8ba63e",
+			"id": "44bf8bea-b0d3-4137-9a67-f3acce8f46af",
 			"key": "google_api_key",
 			"value": ""
 		},
 		{
-			"id": "82fcf253-307a-4831-a435-344e33eb552c",
+			"id": "fa36e371-b80d-4f07-99e4-642c7ddb63f9",
 			"key": "site_name",
 			"value": ""
 		},
 		{
-			"id": "c628f043-be00-4bec-a7fc-b8ce75e5dda4",
+			"id": "c438118e-d21c-4826-a2ab-184ae4ea0a2b",
 			"key": "site_address",
 			"value": ""
 		},
 		{
-			"id": "92a914d1-d840-4400-89da-587f7773b993",
+			"id": "7d731965-85eb-4617-a691-acc67e299dba",
 			"key": "formatted_address",
 			"value": ""
 		},
 		{
-			"id": "b51f734e-e8bf-4710-8bb0-b04a95ffdcde",
+			"id": "05422f1f-e85b-4054-9f09-a91e6ef65399",
 			"key": "lat",
 			"value": ""
 		},
 		{
-			"id": "32f236e8-981d-47ba-b61e-8d448d07a515",
+			"id": "d177d913-7c74-4ac9-9c0e-592f0eac8cd1",
 			"key": "lng",
 			"value": ""
 		},
 		{
-			"id": "bd7cd220-47df-4896-96bc-fce447df427b",
+			"id": "63ff4477-1c50-4f7c-aeb5-6d090712e85a",
 			"key": "apitoken",
 			"value": ""
 		},
 		{
-			"id": "981d1b03-578d-4210-bab9-0b52655e58a7",
+			"id": "442751f8-feae-4494-91ac-e29439ff3919",
 			"key": "mac_address",
 			"value": ""
 		},
 		{
-			"id": "79c76dbf-c978-43ae-b730-2c89fde9dc60",
+			"id": "8b67b630-8479-4893-b56a-3054bd4c7ba4",
 			"key": "device_name",
+			"value": ""
+		},
+		{
+			"id": "233752fd-a49b-4d30-98ca-2afbeeab62fd",
+			"key": "site_id",
+			"value": ""
+		},
+		{
+			"id": "0942287d-d7a7-402d-b659-00ce1275932b",
+			"key": "host",
+			"value": "api.mist.com"
+		},
+		{
+			"id": "b1ba4ee6-4374-4a3f-bb70-036c4bf2e797",
+			"key": "force_reassignment",
 			"value": ""
 		}
 	],
