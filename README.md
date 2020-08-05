@@ -14,7 +14,7 @@ Note: Site creation requires a google maps API key.
 There is only really one file needed, the `Mist_Runner_collection.json` from the `Postman Collection` folder
 You can download this file directly, or clone the git repo which includes some example CSV files.
 
-### Clone Repo
+#### Clone Repo
 `git clone https://github.com/Mist-Automation-Programmability/mist_runner_collection`
 
 ## Import into Postman
@@ -30,10 +30,10 @@ Current required variables are:
 - apitoken
 - org_id
 
-### Environmental Variables
+#### Environmental Variables
 The preferred method for setting these variables is through an environment.  Most of the collection will require an `{{apitoken}}` and an `{{org_id}}` to be defined.  You can create a new Environment and define/set these variables.
 
-### Collection Variables
+#### Collection Variables
 On the `Mist Runner Collection` you can click the the dots and select `Edit`.  On the `Variables` tab you can set either the `Initial Value` or the `Current Value` for the required Variables
 
 
