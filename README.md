@@ -47,7 +47,8 @@ Once you've browsed to here, you can select the options.
 - Next to `Data`, Pick the CSV File.
 - Adjust the `Data File Type` option to match your upload.
 - You should preview the results to make sure things look correct.
-- Check the box next to "Save Responses"
+- Check the box next to `Save Responses`
+- Uncheck the box `Keep Variable Values`
 - Feel free to adjust other options as you see fit.
 - Optionally, you can alter the number of iterations if you don't want to run the whole thing at once.
 - Click `Run Mist Runner`
