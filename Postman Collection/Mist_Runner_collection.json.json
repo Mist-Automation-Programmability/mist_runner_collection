@@ -1,0 +1,2550 @@
+{
+	"info": {
+		"_postman_id": "8111ab86-8014-49cb-8551-e9217e96cd25",
+		"name": "Mist Runner Collections",
+		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Site Creation",
+			"item": [
+				{
+					"name": "googleGeocode",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "820dcf5d-9d01-4ee5-a515-0e703036506b",
+								"exec": [
+									"var encoded = encodeURIComponent(pm.environment.get(\"site_address\") );",
+									"pm.collectionVariables.set(\"site_address\", encoded);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "76c1599a-456f-4eda-a394-9aef4bdb1c27",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.test(\"Status code is 200\", function() {",
+									"  pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"pm.test(\"Results is not empty\", function() {",
+									"  pm.expect(jsonData.results).length >= 1;",
+									"});",
+									"pm.collectionVariables.set(\"formatted_address\", jsonData.results[0].formatted_address)",
+									"pm.collectionVariables.set(\"lat\", parseFloat(jsonData.results[0].geometry.location.lat))",
+									"pm.collectionVariables.set(\"lng\", parseFloat(jsonData.results[0].geometry.location.lng))",
+									"for (var i = 0; i < jsonData.results[0].address_components.length; i++) {",
+									"    console.log(JSON.stringify(jsonData.results[0].address_components[i].types))",
+									"    if (jsonData.results[0].address_components[i].types.indexOf(\"country\") > -1) {",
+									"        pm.collectionVariables.set(\"country_code\", jsonData.results[0].address_components[i].short_name)",
+									"        console.log(\"Found Country Code\")",
+									"        }",
+									"};",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"connection": true,
+							"accept-encoding": true,
+							"accept": true,
+							"user-agent": true,
+							"host": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://maps.googleapis.com/maps/api/geocode/json?address={{site_address}}&key={{google_api_key}}",
+							"protocol": "https",
+							"host": [
+								"maps",
+								"googleapis",
+								"com"
+							],
+							"path": [
+								"maps",
+								"api",
+								"geocode",
+								"json"
+							],
+							"query": [
+								{
+									"key": "address",
+									"value": "{{site_address}}"
+								},
+								{
+									"key": "key",
+									"value": "{{google_api_key}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "googleTimeZone",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "eac3c302-2690-4a83-a480-56af5d5cd8f6",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.test(\"Status code is 200\", function() {",
+									"  pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"pm.test(\"TimeZoneID is present\", function() {",
+									"  pm.expect(jsonData).to.have.property(\"timeZoneId\");",
+									"});",
+									"pm.collectionVariables.set(\"time_zone\", jsonData.timeZoneId)",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://maps.googleapis.com/maps/api/timezone/json?location={{lat}},{{lng}}&timestamp={{$timestamp}}&key={{google_api_key}}",
+							"protocol": "https",
+							"host": [
+								"maps",
+								"googleapis",
+								"com"
+							],
+							"path": [
+								"maps",
+								"api",
+								"timezone",
+								"json"
+							],
+							"query": [
+								{
+									"key": "location",
+									"value": "{{lat}},{{lng}}"
+								},
+								{
+									"key": "timestamp",
+									"value": "{{$timestamp}}"
+								},
+								{
+									"key": "key",
+									"value": "{{google_api_key}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getOrgSites_CheckDuplicate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "05fffd6c-7623-421a-95e3-676f684f3620",
+								"exec": [
+									"var nextRequest = \"createOrgSite\"",
+									"var foundDup = false",
+									"var jsonData = JSON.parse(responseBody);",
+									"for (var i = 0; i < jsonData.length; i++) {",
+									"    if (jsonData[i].name == pm.variables.get(\"site_name\")) {",
+									"        console.log(\"Found Duplicate Site\")",
+									"        foundDup = true",
+									"        }",
+									"};",
+									"",
+									"pm.test(\"Verify site_name does not exist\", function(){",
+									"    pm.expect(foundDup).to.eql(false);",
+									"});",
+									"if (foundDup == true){",
+									"     nextRequest = null",
+									"};",
+									"",
+									"",
+									"console.log(nextRequest)",
+									"postman.setNextRequest(nextRequest);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":orgr_id",
+								"sites"
+							],
+							"variable": [
+								{
+									"key": "orgr_id",
+									"type": "string",
+									"value": "{{org_id}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "ok",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "",
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "createOrgSite",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "45dcdd51-984e-4b47-9fcb-bee6faf87ef5",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "eec511bd-75d0-4a0c-9aec-09981eaa403c",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.test(\"Status code is 200\", function() {",
+									"  pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"pm.test(\"Site ID  is present\", function() {",
+									"  pm.expect(jsonData).to.have.property(\"id\");",
+									"});",
+									"pm.test(\"Name matches CSV\", function() {",
+									"  pm.expect(jsonData.name).to.equal(pm.variables.get(\"site_name\"));",
+									"});",
+									"",
+									"pm.collectionVariables.unset(\"site_address\")",
+									"pm.collectionVariables.unset(\"lat\")",
+									"pm.collectionVariables.unset(\"lng\")",
+									"pm.collectionVariables.unset(\"formatted_address\")",
+									"pm.collectionVariables.unset(\"time_zone\")",
+									"pm.collectionVariables.unset(\"device_id\")",
+									"pm.collectionVariables.unset(\"country_code\")"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"accept-encoding": true,
+							"connection": true,
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Token {{apitoken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{site_name}}\",\n    \"timezone\": \"{{time_zone}}\",\n    \"country_code\": \"{{country_code}}\",\n    \"rftemplate_id\": \"{{rf_template_id}}\",\n    \"latlng\": { \"lat\": {{lat}}, \"lng\": {{lng}} },\n    \"address\": \"{{formatted_address}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"sites"
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}"
+								}
+							]
+						},
+						"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nname|string|Required. The name of the site\ntimezone|string|Timezone the site is at\ncountry_code|string|country code for the site (for AP config generation), in two-character\nlatlng|latlng|site location\naddress|string|full address of the site\nlat|float|latitude\nlng|float|longitude\nsitegroup_ids|list|sitegroups this site belongs to\nrftemplate_id|string|RF Template ID, this takes precedence over Site Settings\nsecpolicy_id|string|SecPolicy ID\nalarmtemplate_id|string|Alarm Template ID, this takes precedence over the Org-level alarmtemplate_id"
+					},
+					"response": [
+						{
+							"name": "OK",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n    \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n    \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n\n    \"latlng\": { \"lat\": 37.295833, \"lng\": -122.032946 },\n    \"sitegroup_ids\": [ \"581328b6-e382-f54e-c9dc-999983183a34\", \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\" ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"sites"
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"latlng\": {\n        \"lat\": 37.295833,\n        \"lng\": -122.032946\n    },\n    \"sitegroup_ids\": [\n        \"581328b6-e382-f54e-c9dc-999983183a34\",\n        \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n    ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}"
+						}
+					]
+				}
+			],
+			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
+			"auth": {
+				"type": "apikey",
+				"apikey": [
+					{
+						"key": "value",
+						"value": "Token {{apitoken}}",
+						"type": "string"
+					},
+					{
+						"key": "key",
+						"value": "Authorization",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "6a6b75f9-9424-4df5-abc1-2a741de087dc",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "22e6aa2c-c94f-4dba-98b2-db3114ad592b",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Inventory Assignment",
+			"item": [
+				{
+					"name": "getOrgInventory_Assignment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8086d41d-4dc4-4413-8738-14f98ab4dd1a",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"for (var i = 0; i < jsonData.length; i++){",
+									"    if (jsonData[i].mac == pm.variables.get(\"mac_address\")){",
+									"        pm.collectionVariables.set(\"c_device_id\", jsonData[i].id);",
+									"        console.log(\"id = \" + jsonData[i].id);",
+									"    };",
+									"};",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"inventory"
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}"
+								}
+							]
+						},
+						"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
+					},
+					"response": [
+						{
+							"name": "OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+									"protocol": "https",
+									"host": [
+										"{{hosts}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "getOrgSitesByName",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fa2804cb-7f1e-47c9-aa22-a9ab1e74c4aa",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code is 200\", function() {",
+									"  pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"for(let i = 0; i < jsonData.length; i++){",
+									"if(jsonData[i].name == pm.collectionVariables.get(\"site_name\")){",
+									"    pm.environment.set(\"c_site_id\", jsonData[i].id);",
+									"    console.log(jsonData[i].id);",
+									"};",
+									"};"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":orgr_id",
+								"sites"
+							],
+							"variable": [
+								{
+									"key": "orgr_id",
+									"value": "{{org_id}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "ok",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":orgr_id",
+										"sites"
+									],
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "assignOrgInventoryToSite",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "cf1db564-48fe-4527-80a9-364b6de4ff8b",
+								"exec": [
+									"pm.environment.set(\"no_reassignment_bool\", (pm.variables.get(\"no_reassignment\") == \"true\"))",
+									"console.log(\"Site ID = \" + pm.collectionVariables.get(\"site_id\"))",
+									"console.log(pm.collectionVariables.get(\"no_reassignment_bool\"))",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "392b2617-d871-4981-a139-7fb114b2a591",
+								"exec": [
+									"var jsonData = pm.response.json()",
+									"pm.test(\"Verify that error length is 0\", () => {",
+									"    pm.expect(jsonData.error.length).to.eql(0);",
+									"});",
+									"pm.test(\"Verify that success length is 1\", () => {",
+									"    pm.expect(jsonData.success.length).to.eql(1);",
+									"});",
+									"",
+									"pm.collectionVariables.unset(\"c_site_id\")",
+									"pm.collectionVariables.unset(\"c_device_id\")",
+									"pm.collectionVariables.unset(\"mac_address\")",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "X-CSRFToken",
+								"type": "text",
+								"value": "{{csrftoken}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"op\": \"assign\",\n    \"site_id\": \"{{c_site_id}}\",\n    \"macs\": [\n        \"{{mac_address}}\"\n    ],\n    \"no_reassign\": {{no_reassignment_bool}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"inventory"
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}"
+								}
+							]
+						},
+						"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nop|string|Required. assign\nsite_id|string|Required. target site id\nmacs|list|list of MAC, e.g. 5c5b350e0001\nno_reassign|boolean|if true, treat site assignment against an already assigned AP as error"
+					},
+					"response": [
+						{
+							"name": "OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+									"protocol": "https",
+									"host": [
+										"{{hosts}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"op\": \"assign\",\n    \"success\": [ \"5c5b350e0001\" ],\n    \"error\": [ ]\n}"
+						}
+					]
+				}
+			],
+			"description": "This collection will use a CSV Template to assign multiple devices to a site.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\n{{site_name}}\n{{mac_address}}\n{force_reassignment} - Should be `true` or `false` - If you want to reassign inventory that is already assigned to a site.\n\n\n\nExample CSV:\n```\nsite_name,mac_address,force_reassignment\nsite01,aabbccddeeff,false\n```",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ce2edc40-ad84-44e4-a5e9-adbbe9e29cdb",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "c12b6d1d-5d52-4f3e-8084-4b1c904b099a",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Update Sites(Group)",
+			"item": [
+				{
+					"name": "Generic Update Sites",
+					"item": [
+						{
+							"name": "updateSiteSettings - Generic",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "316f2a15-774c-4995-9a22-714875db20dd",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"type": "text",
+										"value": "application/json"
+									},
+									{
+										"key": "X-CSRFToken",
+										"type": "text",
+										"value": "{{csrftoken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"setting"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"type": "string",
+											"value": "{{site_id}}"
+										}
+									]
+								},
+								"description": " #### Body Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n analytic.enabled|boolean|enable Advanced Analytic feature, default is false (using SUB-ANA license)\r\n app_waking|boolean|default is false\r\n auto_upgrade|object|auto upgrade\r\n bandwidth|int|channel width for the band, 20 / 40 / 80, 80 is only applicable for band_5\r\n ble_config|object|BLE config (see Site:BLE Config)\r\n ble|object|BLE asset settings\r\n brightness|int|0-255, default is 255\r\n channel|int|(primary) channel for the band, 0 means auto\r\n channels|list|list of channels, null or empty array means auto\r\n device_updown_threshold|int|sending AP_DISCONNECTED event in device-updowns only if AP_CONNECTED is not seen within the threshold, in minutes, 0 - 30, default is 0\r\n flags|list|name/val pair objects for location engine to use\r\n hello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\n hello_retries|int|between 2 and 30, default is 7\r\n led.enabled|boolean|whether to enable LED, default is true\r\n led|object|LED control\r\n model_specific|object|overwrites for a specific model. If a band is specified, it will shadow the default.\r\n mxtunnel.mtu|int|552-1500, default is 0\r\n ntp_servers|list|list of NTP servers\r\n persist_config_on_device|boolean|whether to store the config on AP, default is false\r\n power_max|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power_min|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power|int|tx power of the radio, 0 mean auto\r\n preamble|string|short / long / auto, default is short\r\n proxy|object|Proxy Configuration for APs to talk to Mist\r\n radio_config|object|site RF settings\r\n remote_syslog|object|syslog parameters\r\n report_gatt|boolean|default is false; whether AP should periodically connect to BLE devices and report GATT device info (device name, manufacturer name, serial number, battery %, temperature, humidity)\r\n rogue|object|rogue detection parameters\r\n rtsa|object|managed mobility\r\n ssh_keys|list|when limit_ssh_access = true in Org Setting, list of SSH public keys provided by Mist Support to install onto APs (see Org:Setting)\r\n track_anonymous_devices|boolean|default is false; whether to track anonymous BLE assets (requires ‘track_asset’ enabled)\r\n track_asset|boolean|enable Asset Tracking, default is false (using SUB-AST license)\r\n vars|object|a dictionary of name->value, the vars can then be used in Wlans\r\n wifi|object|managed connectivity\r\n\r\n #### Wi-Fi Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|enable WIFI feature, default is true (using SUB-MAN license)\r\n enable_arp_spoof_check|boolean|when proxy_arp is enabled, check for arp spoofing. default is false\r\n enable_channel_144|boolean|whether to enable channel 144 (some older clients may not support in US), default is false\r\n enable_vna|boolean|enable Virtual Network Assistant, default is false (using SUB-VNA license)\r\n proxy_arp|string|default / enabled / disabled\r\n locate_unconnected|boolean|whether to locate unconnected clients, default is false\r\n mesh_enabled|boolean|whether to enable Mesh feature for the site, default is false\r\n disable_11k|boolean|whether to disable 11k, default is false\r\n \r\n #### Remote Syslog Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not remote syslog is enabled\r\n servers|list|list of syslog servers\r\n host|string|host to which syslog is sent\r\n protocol|string|udp / tcp, protocol to use for remote syslog, default is udp\r\n port|int|port on which to connect to host for syslog, default is 514 if protocol=udp, 6514 if protocol=tcp\r\n facility|string|kern / user / mail / daemon / auth / syslog / lpr / news / uucp / cron / authpriv / ftp / ntp / security / console / solaris-cron / local0 - local7, default is config\r\n severity|string|emerg / alert / crit / err / warning / notice / info / debug, default is info\r\n tag|string|optional, tag to attach to log record\r\n \r\n #### Rogue Detection Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not rogue detection is enabled\r\n honeypot_enabled|boolean|whether or not honeypot detection is enabled\r\n min_rssi|int|minimum RSSI for an AP to be considered rogue (ignoring APs that’s far away), default is -80. Minimum allowed value is -85.\r\n min_duration|int|minimum duration for a bssid to be considered rogue, maximum is 59, default is 10\r\n whitelisted_ssids|list|list of SSIDs to whitelist\r\n whitelisted_bssids|list|list of BSSIDs to whitelist\r\n \r\n #### Auto Upgrade Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether auto upgrade should happen, default is false (Note that Mist may auto-upgrade if the version is not supported)\r\n version|string|desired version, beta / stable / custom, default is stable\r\n time_of_day|string|any / HH:MM (24-hour format), upgrade will happen within up to 1-hour from this time\r\n day_of_week|string|any / mon / tue / wed / thu / fri / sat / sun\r\n custom_versions|object|custome versions for different models\r\n\r\n #### Engagement Parameter\r\n NOTE: if hours does not exist, it’s treated as everyday of the week, 00:00-23:59. Currently we don’t allow multiple ranges for the same day\r\n\r\nNOTE: default values for dwell_tags: passerby (1,300) bounce (301, 14400) engaged (14401, 28800) stationed (28801, 42000)\r\n\r\nNOTE: default values for dwell_tag_names: passerby = “Passerby”, bounce = “Visitor”, engaged = “Associates”, stationed = “Assets”\r\n\r\n\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n dwell_tags|object|add tags to visits within the duration (in seconds), available tags (passerby, bounce, engaged, stationed)\r\n max_dwell|int|max time, default is 43200(12h), max is 68400 (18h)\r\n min_dwell|int|min time, default is 0.\r\n hours|object|hours of operation filter, the available days (mon, tue, wed, thu, fri, sat, sun). Note: If the dow is not defined then it’s treated as 00:00-23:59.\r\n \r\n #### WIDS Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n threshold|int|count of events to trigger\r\nduration|int|window where a trigger will be detected and action to be taken (in seconds)\r\n\r\n #### Tunnel Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n hosts|list|hostnames or IPs where a Mist Tunnel will use as the Peer (i.e. they are reachable from AP)\r\nap_subnets|list|list of subnets where we allow AP to establish Mist Tunnels from\r\nprotocol|list|udp / ip, default is udp\r\nvlan_ids|list|list of vlan_ids that will be used\r\nhello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\nhello_retries|int|between 2 and 30, default is 7"
+							},
+							"response": []
+						}
+					],
+					"description": "This collection will use a the exported JSON payload of all sites to push arbitrary config to each site.  \n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Generic` to the payload you want to push.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "a252650e-b078-4a99-ba73-8355b1005cd6",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "3eb81567-dc21-4b19-8d8a-fff28f5fa44e",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Set Firmware Version",
+					"item": [
+						{
+							"name": "updateSiteSettings - Firmware",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "3a3e78a8-ef7e-414a-9f41-a0a5fbc44127",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"type": "text",
+										"value": "application/json"
+									},
+									{
+										"key": "X-CSRFToken",
+										"type": "text",
+										"value": "{{csrftoken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"auto_upgrade\": {\n        \"enabled\": true,\n        \"version\": \"custom\",\n        \"time_of_day\": \"02:00\",\n        \"custom_versions\": {\n            \"AP43\": \"0.7.20216\",\n            \"AP41\": \"0.7.20216\"\n        },\n        \"day_of_week\": \"sun\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"setting"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"type": "string",
+											"value": "{{id}}"
+										}
+									]
+								},
+								"description": " #### Body Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n analytic.enabled|boolean|enable Advanced Analytic feature, default is false (using SUB-ANA license)\r\n app_waking|boolean|default is false\r\n auto_upgrade|object|auto upgrade\r\n bandwidth|int|channel width for the band, 20 / 40 / 80, 80 is only applicable for band_5\r\n ble_config|object|BLE config (see Site:BLE Config)\r\n ble|object|BLE asset settings\r\n brightness|int|0-255, default is 255\r\n channel|int|(primary) channel for the band, 0 means auto\r\n channels|list|list of channels, null or empty array means auto\r\n device_updown_threshold|int|sending AP_DISCONNECTED event in device-updowns only if AP_CONNECTED is not seen within the threshold, in minutes, 0 - 30, default is 0\r\n flags|list|name/val pair objects for location engine to use\r\n hello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\n hello_retries|int|between 2 and 30, default is 7\r\n led.enabled|boolean|whether to enable LED, default is true\r\n led|object|LED control\r\n model_specific|object|overwrites for a specific model. If a band is specified, it will shadow the default.\r\n mxtunnel.mtu|int|552-1500, default is 0\r\n ntp_servers|list|list of NTP servers\r\n persist_config_on_device|boolean|whether to store the config on AP, default is false\r\n power_max|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power_min|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power|int|tx power of the radio, 0 mean auto\r\n preamble|string|short / long / auto, default is short\r\n proxy|object|Proxy Configuration for APs to talk to Mist\r\n radio_config|object|site RF settings\r\n remote_syslog|object|syslog parameters\r\n report_gatt|boolean|default is false; whether AP should periodically connect to BLE devices and report GATT device info (device name, manufacturer name, serial number, battery %, temperature, humidity)\r\n rogue|object|rogue detection parameters\r\n rtsa|object|managed mobility\r\n ssh_keys|list|when limit_ssh_access = true in Org Setting, list of SSH public keys provided by Mist Support to install onto APs (see Org:Setting)\r\n track_anonymous_devices|boolean|default is false; whether to track anonymous BLE assets (requires ‘track_asset’ enabled)\r\n track_asset|boolean|enable Asset Tracking, default is false (using SUB-AST license)\r\n vars|object|a dictionary of name->value, the vars can then be used in Wlans\r\n wifi|object|managed connectivity\r\n\r\n #### Wi-Fi Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|enable WIFI feature, default is true (using SUB-MAN license)\r\n enable_arp_spoof_check|boolean|when proxy_arp is enabled, check for arp spoofing. default is false\r\n enable_channel_144|boolean|whether to enable channel 144 (some older clients may not support in US), default is false\r\n enable_vna|boolean|enable Virtual Network Assistant, default is false (using SUB-VNA license)\r\n proxy_arp|string|default / enabled / disabled\r\n locate_unconnected|boolean|whether to locate unconnected clients, default is false\r\n mesh_enabled|boolean|whether to enable Mesh feature for the site, default is false\r\n disable_11k|boolean|whether to disable 11k, default is false\r\n \r\n #### Remote Syslog Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not remote syslog is enabled\r\n servers|list|list of syslog servers\r\n host|string|host to which syslog is sent\r\n protocol|string|udp / tcp, protocol to use for remote syslog, default is udp\r\n port|int|port on which to connect to host for syslog, default is 514 if protocol=udp, 6514 if protocol=tcp\r\n facility|string|kern / user / mail / daemon / auth / syslog / lpr / news / uucp / cron / authpriv / ftp / ntp / security / console / solaris-cron / local0 - local7, default is config\r\n severity|string|emerg / alert / crit / err / warning / notice / info / debug, default is info\r\n tag|string|optional, tag to attach to log record\r\n \r\n #### Rogue Detection Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not rogue detection is enabled\r\n honeypot_enabled|boolean|whether or not honeypot detection is enabled\r\n min_rssi|int|minimum RSSI for an AP to be considered rogue (ignoring APs that’s far away), default is -80. Minimum allowed value is -85.\r\n min_duration|int|minimum duration for a bssid to be considered rogue, maximum is 59, default is 10\r\n whitelisted_ssids|list|list of SSIDs to whitelist\r\n whitelisted_bssids|list|list of BSSIDs to whitelist\r\n \r\n #### Auto Upgrade Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether auto upgrade should happen, default is false (Note that Mist may auto-upgrade if the version is not supported)\r\n version|string|desired version, beta / stable / custom, default is stable\r\n time_of_day|string|any / HH:MM (24-hour format), upgrade will happen within up to 1-hour from this time\r\n day_of_week|string|any / mon / tue / wed / thu / fri / sat / sun\r\n custom_versions|object|custome versions for different models\r\n\r\n #### Engagement Parameter\r\n NOTE: if hours does not exist, it’s treated as everyday of the week, 00:00-23:59. Currently we don’t allow multiple ranges for the same day\r\n\r\nNOTE: default values for dwell_tags: passerby (1,300) bounce (301, 14400) engaged (14401, 28800) stationed (28801, 42000)\r\n\r\nNOTE: default values for dwell_tag_names: passerby = “Passerby”, bounce = “Visitor”, engaged = “Associates”, stationed = “Assets”\r\n\r\n\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n dwell_tags|object|add tags to visits within the duration (in seconds), available tags (passerby, bounce, engaged, stationed)\r\n max_dwell|int|max time, default is 43200(12h), max is 68400 (18h)\r\n min_dwell|int|min time, default is 0.\r\n hours|object|hours of operation filter, the available days (mon, tue, wed, thu, fri, sat, sun). Note: If the dow is not defined then it’s treated as 00:00-23:59.\r\n \r\n #### WIDS Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n threshold|int|count of events to trigger\r\nduration|int|window where a trigger will be detected and action to be taken (in seconds)\r\n\r\n #### Tunnel Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n hosts|list|hostnames or IPs where a Mist Tunnel will use as the Peer (i.e. they are reachable from AP)\r\nap_subnets|list|list of subnets where we allow AP to establish Mist Tunnels from\r\nprotocol|list|udp / ip, default is udp\r\nvlan_ids|list|list of vlan_ids that will be used\r\nhello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\nhello_retries|int|between 2 and 30, default is 7"
+							},
+							"response": []
+						}
+					],
+					"description": "This collection will use a the exported JSON payload of all sites to push updated firmware settings to each site.\n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Firmware` to specify the firmware settings you want.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "b2743516-415c-497e-b620-95c2b454b3e0",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "6bf45bf5-12ca-46d2-b01a-5c15262d8290",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Add Webhook To Sites",
+					"item": [
+						{
+							"name": "getSiteWebhooks by Name",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "48616e54-67af-4f3e-bebc-e9300e98e3e9",
+										"exec": [
+											"var nextRequest = \"createSiteWebhook\"",
+											"var foundDup = false",
+											"var jsonData = JSON.parse(responseBody);",
+											"for (var i = 0; i < jsonData.length; i++) {",
+											"    if (jsonData[i].name == pm.variables.get(\"site_name\")) {",
+											"        console.log(\"Found Duplicate Site\")",
+											"        foundDup = true",
+											"        }",
+											"};",
+											"",
+											"pm.test(\"Verify site_name does not exist\", function(){",
+											"    pm.expect(foundDup).to.eql(false);",
+											"});",
+											"if (foundDup == true){",
+											"     nextRequest = null",
+											"};",
+											"",
+											"",
+											"console.log(nextRequest)",
+											"postman.setNextRequest(nextRequest);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/webhooks",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"webhooks"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{site_id}}",
+											"type": "string"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "",
+											"variable": [
+												{
+													"key": "site_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"analytic\",\n        \"type\": \"http-post\",\n        \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n        \"secret\": \"secret\",\n        \"headers\": {\n            \"x-custom-1\": \"your_custom_header_value1\",\n            \"x-custom-2\": \"your_custom_header_value2\"\n        },\n        \"verify_cert\": false,\n        \"enabled\": true,\n        \"topics\": [\n            \"location\",\n            \"zone\",\n            \"device-events\",\n            \"alarms\",\n            \"audits\",\n            \"client-sessions\",\n            \"device-updowns\"\n        ]\n    },\n    {\n        \"name\": \"analytic\",\n        \"type\": \"splunk\",\n        \"url\": \"https://my.splunk.host:8088/services/collector\",\n        \"splunk_token\": \"token\",\n        \"verify_cert\": false,\n        \"enabled\": true,\n        \"topics\": [\n            \"location\",\n            \"zone\",\n            \"vbeacon\",\n            \"rssizone\",\n            \"asset-raw\",\n            \"client-sessions\",\n            \"device-updowns\"\n        ]\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "createSiteWebhook - Webhook",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"type": "text",
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"value": "{{csrftoken}}",
+										"key": "X-CSRFToken",
+										"type": "text"
+									},
+									{
+										"value": "application/json",
+										"key": "Content-Type",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/webhooks",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"webhooks"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{site_id}}",
+											"type": "string"
+										}
+									]
+								},
+								"description": " #### Body Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n name|string|name of the webhook\r\n enabled|boolean|whether webhook is enabled\r\n topics|list|list of subscribed topics: location/zone/vbeacon/rssizone/asset-raw/device-events/alarms/audits/client-sessions\r\n type|string|http-post (default) / splunk / google-pubsub / aws-sns\r\n url|string|url\r\n headers|object|custom headers: the headers name and value must be string, total bytes of headers name and value must be less than 1000\r\n secret|string|optional, when type=http-post, if provided, X-Mist-Signature in HTTP header will be the signature of HMAC_SHA1(secret, body)\r\n verify_cert|boolean|when url uses HTTPS, whether to verify the certificate, default is false\r\n\r\n* If headers format is invalid, “X-Mist-Error”: “headers format invalid” will be sent.\r\n* If total bytes of headers exceed 1000, “X-Mist-Error”: “headers too big” will be sent.\r\n* If any header value is not string, “X-Mist-Error”: “header[%s] not a string” will be sent."
+							},
+							"response": [
+								{
+									"name": "Example Delivery of “asset-raw” via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"asset-raw\",\n    \"events\": [\n        {\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n            \"timestamp\": 1461220784,\n            \"device_id\": \"00000000-0000-0000-1000-5c5b35000001\",\n            \"beam\": 5,\n            \"rssi\": -71,\n            \"mac\": \"7fc2936fd243\",\n            \"asset_id\": \"a8ec4d8a-4da6-4ead-a486-d0f72e40dd08\",\n            \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n            \"ibeacon_major\": 13,\n            \"ibeacon_minor\": 138,\n            \"mfg_company_id\": 935,\n            \"mfg_data\": \"648520a1020000\"\n        }\n    ]\n}"
+								},
+								{
+									"name": "Example Delivery of \"device-events\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"device-events\",\n    \"events\": [\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_RESTARTED\",\n            \"ap\": \"5c5b35000001\",\n            \"timestamp\": 1461220784\n        }\n    ]\n}"
+								},
+								{
+									"name": "Example Delivery of \"device-updowns\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"device-updowns\",\n    \"events\": [\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_DISCONNECTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        },\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_CONNECTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        },\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_RESTARTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        }\n    ]\n}"
+								},
+								{
+									"name": "Example Delivery of \"location\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "[\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"sdk\",\n        \"id\": \"de87bf9d-183f-e383-cc68-6ba43947d403\",\n        \"name\": \"optional\"\n    },\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"wifi\",\n        \"mac\": \"5684dae9ac8b\"\n    },\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"asset\",\n        \"mac\": \"7fc2936fd243\",\n        \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n        \"ibeacon_major\": 13,\n        \"ibeacon_minor\": 138,\n        \"eddystone_uid_namespace\": \"2818e3868dec25629ede\",\n        \"eddystone_uid_instance\": \"5c5b35000001\",\n        \"eddystone_url_url\": \"https://www.abc.com\",\n        \"mfg_company_id\": 935,\n        \"mfg_data\": \"648520a1020000\",\n        \"battery_voltage\": 3370\n    }\n]"
+								},
+								{
+									"name": "Example Delivery of \"audits\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"audits\",\n    \"events\": [\n        {\n            \"admin_name\": \"Chris Dao chris.dao@yahoo.com\",\n            \"device_id\": \"00000000-0000-0000-1000-5c5b350e01c7\",\n            \"id\": \"8e00dd48-b918-4d9b-b40d-b98989ac76a7\",\n            \"message\": \"Update Device \\\"Reception\\\"\",\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"src_ip\": \"73.92.124.103\",\n            \"timestamp\": 1549047906.201053\n        }\n    ]\n}"
+								},
+								{
+									"name": "Example Delivery of \"zone\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"zone\",\n    \"events\": [\n        {\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n            \"zone_id\": \"8ac84899-32db-6327-334c-9b6d58544cfe\",\n            \"trigger\": \"enter\",\n            \"timestamp\": 1461220784,\n            \"type\": \"sdk\",\n            \"id\": \"de87bf9d-183f-e383-cc68-6ba43947d403\",\n            \"name\": \"optional\"\n        },\n        {\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n            \"zone_id\": \"8ac84899-32db-6327-334c-9b6d58544cfe\",\n            \"trigger\": \"enter\",\n            \"timestamp\": 1461220784,\n            \"type\": \"wifi\",\n            \"mac\": \"5684dae9ac8b\"\n        },\n        {\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n            \"zone_id\": \"8ac84899-32db-6327-334c-9b6d58544cfe\",\n            \"trigger\": \"enter\",\n            \"timestamp\": 1461220784,\n            \"type\": \"asset\",\n            \"mac\": \"7fc2936fd243\",\n            \"asset_id\": \"c180b858-8f39-11e7-a7a5-346895ed1b7d\"\n        }\n    ]\n}"
+								},
+								{
+									"name": "Example Delivery of \"alarms\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"alarms\",\n    \"events\": [\n        {\n            \"aps\": [\n                \"5c5b350e1003\"\n            ],\n            \"bssids\": [\n                \"00024a00310c\",\n                \"5c5b3500e10f\",\n                \"000f24090ff1\",\n                \"c03f0e76fe91\",\n                \"e091f512eda2\",\n                \"e894f6258a3f\",\n                \"40169f1157a4\",\n                \"40169f1151b2\",\n                \"c03f0e7aba91\",\n                \"5c5b35090ff3\"\n            ],\n            \"count\": 16,\n            \"id\": \"95193bda-1fef-4ea6-9e5b-97c9f5e0655a\",\n            \"last_seen\": 1549068720,\n            \"ssids\": [\n                \"qwerty\",\n                \"A-Dot\",\n                \"xfinity\",\n                \"alpha\"\n            ],\n            \"timestamp\": 1549068202,\n            \"type\": \"rogue-ap-detected\",\n            \"update\": true,\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\"\n        }\n    ]\n}"
+								},
+								{
+									"name": "Example Delivery of \"client-sessions\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"client-sessions\",\n    \"events\": [\n        {\n            \"mac\": \"5684dae9ac8b\",\n            \"ap\": \"5c5b35000001\",\n            \"band\": \"5\",\n            \"connect\": 1549047906,\n            \"disconnect\": 1549048900,\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"device_id\": \"00000000-0000-0000-1000-5c5b350e01c7\",\n            \"id\": \"8e00dd48-b918-4d9b-b40d-b98989ac76a7\",\n            \"message\": \"Update Device \\\"Reception\\\"\",\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"timestamp\": 1549047906.201053,\n            \"client_family\": \"Mac\",\n            \"client_manufacture\": \"Apple\",\n            \"client_model\": \"8+\",\n            \"client_os\": \"Mojave\",\n            \"site_name\": \"Sample Site\",\n            \"termination_reason\": 1\n        }\n    ]\n}"
+								}
+							]
+						}
+					],
+					"description": "This collection will use a the exported JSON payload of all sites to push a site webhook to each site.\nIt will not replace a webhook if it exists today.\n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Webhook` to the webhook settings you want to use.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "25aecf33-93f4-4fb8-8b3c-b45c5f17c314",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "4326f720-a349-4205-b8ea-f53890e561d6",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Delete Sites",
+					"item": [
+						{
+							"name": "getOrgSitesByName Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "0aad334a-a483-43af-b754-5fb4d8058729",
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"for(let i = 0; i < jsonData.length; i++){",
+											"if(jsonData[i].name == pm.variables.get(\"site_name\")){",
+											"    pm.collectionVariables.set(\"site_id\", jsonData[i].id);",
+											"};",
+											"};"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":orgr_id",
+										"sites"
+									],
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": "{{org_id}}"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "ok",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":orgr_id",
+												"sites"
+											],
+											"variable": [
+												{
+													"key": "orgr_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "deleteSite",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "675a7ebf-70ce-4ce9-a8a7-1f495f32509d",
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "825443c5-7b66-4017-8c28-f4767e4d9841",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"",
+											"pm.collectionVariables.unset(\"site_address\")",
+											"pm.collectionVariables.unset(\"lat\")",
+											"pm.collectionVariables.unset(\"lng\")",
+											"pm.collectionVariables.unset(\"formatted_address\")",
+											"pm.collectionVariables.unset(\"time_zone\")",
+											"pm.collectionVariables.unset(\"device_id\")"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept-encoding": true,
+									"connection": true,
+									"user-agent": true
+								}
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"type": "text",
+										"value": "Token {{apitoken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{site_id}}"
+										}
+									]
+								},
+								"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nname|string|Required. The name of the site\ntimezone|string|Timezone the site is at\ncountry_code|string|country code for the site (for AP config generation), in two-character\nlatlng|latlng|site location\naddress|string|full address of the site\nlat|float|latitude\nlng|float|longitude\nsitegroup_ids|list|sitegroups this site belongs to\nrftemplate_id|string|RF Template ID, this takes precedence over Site Settings\nsecpolicy_id|string|SecPolicy ID\nalarmtemplate_id|string|Alarm Template ID, this takes precedence over the Org-level alarmtemplate_id"
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n    \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n    \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n\n    \"latlng\": { \"lat\": 37.295833, \"lng\": -122.032946 },\n    \"sitegroup_ids\": [ \"581328b6-e382-f54e-c9dc-999983183a34\", \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\" ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":org_id",
+												"sites"
+											],
+											"variable": [
+												{
+													"key": "org_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "{\n    \"id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"latlng\": {\n        \"lat\": 37.295833,\n        \"lng\": -122.032946\n    },\n    \"sitegroup_ids\": [\n        \"581328b6-e382-f54e-c9dc-999983183a34\",\n        \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n    ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}"
+								}
+							]
+						}
+					],
+					"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
+					"auth": {
+						"type": "apikey",
+						"apikey": [
+							{
+								"key": "value",
+								"value": "Token {{apitoken}}",
+								"type": "string"
+							},
+							{
+								"key": "key",
+								"value": "Authorization",
+								"type": "string"
+							}
+						]
+					},
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "5f03caa4-7f83-4137-998a-1e6bfe79a54c",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "454d7579-c141-42e8-82e1-149aaf155dcc",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "getSites - Send And Download",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":orgr_id",
+								"sites"
+							],
+							"variable": [
+								{
+									"key": "orgr_id",
+									"value": "{{org_id}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "ok",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "",
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+						}
+					]
+				}
+			],
+			"description": "For each of the bulk-site actions, you will need to run the \"getSites - Send and Download\" action first, and perform the send/download.  This will create a json file that contains all the sites for runner to iterate through.\n\nRequired Environment Variables:\n{{apitoken}}\n{{org_id}}\n\n\n\n\n",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "055a1790-c5fb-474d-b0e9-acb49f7b74e7",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "131eee16-060f-4c20-8d9b-455a67caad62",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Clone Network Template",
+			"item": [
+				{
+					"name": "getOrgNetworkTemplates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d0daf593-5762-4285-9506-3379867f0cde",
+								"exec": [
+									"let jsonData = pm.response.json();",
+									"delete jsonData['id']",
+									"delete jsonData['name']",
+									"delete jsonData['org_id']",
+									"delete jsonData['created_time']",
+									"delete jsonData['modified_time']",
+									"jsonData['name'] = jsonData['name'] + \" Copy\"",
+									"let saveData = JSON.stringify(jsonData);",
+									"pm.collectionVariables.set(\"saveData\", saveData[0])"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/networktemplates",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"networktemplates"
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getOrgNetworkTemplateDetails",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/networktemplates/:networktemplate_id",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"networktemplates",
+								":networktemplate_id"
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}",
+									"type": "string"
+								},
+								{
+									"key": "networktemplate_id",
+									"value": "{{networktemplate_id}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createOrgNetworkTemplate Copy",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"type": "text",
+								"value": "application/json",
+								"key": "Accept"
+							},
+							{
+								"value": "{{csrftoken}}",
+								"key": "X-CSRFToken",
+								"type": "text"
+							},
+							{
+								"type": "text",
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"xxx\",\n\n    \"networks\": {\n        \"default\": {\n            \"vlan_id\": 1\n        },\n        \"corp\": {\n            \"vlan_id\": 600\n        },\n        \"guest\": {\n            \"vlan_id\": 700\n        },\n        \"mgmt\": {\n            \"vlan_id\": 500\n        }\n    },\n\n    \"radius_config\": {\n        \"auth_servers_timeout\": 5,\n        \"auth_servers_retries\": 3,\n        \"auth_servers\": [\n            {\n                \"host\": \"1.2.3.4\",\n                \"port\": 1812,\n                \"secret\": \"testing123\"\n            },\n            {\n                \"host\": \"radius.internal\",\n                \"port\": 1812,\n                \"secret\": \"testing123\"\n            }\n        ],\n        \"acct_servers\": [\n            {\n                \"host\": \"1.2.3.4\",\n                \"port\": 1812,\n                \"secret\": \"testing123\"\n            }\n        ],\n        \"acct_interim_interval\": 0\n    },\n\n    \"port_usages\": {\n        \"ap\": {\n            \"mode\": \"trunk\",\n            \"stp_edge\": true,\n            \"all_networks\": false,\n            \"networks\": [ \"guest\", \"corp\" ],\n            \"port_network\": \"mgmt\",\n            \"disabled\": false,\n            \"description\": \"WAP\"\n        },\n        \"uplink\": {\n            \"mode\": \"trunk\",\n            \"all_networks\": true,\n            \"stp_edge\": false,\n            \"port_network\": null\n        },\n        \"iot\": {\n            \"mode\": \"access\",\n            \"stp_edge\": true,\n            \"port_network\": \"default\" \n        },\n        \"default\": {\n            \"mode\": \"access\",\n            \"stp_edge\": false,  \n            \"port_network\": \"default\"\n        },\n        \"dynamic\": {\n            \"mode\": \"dynamic\",\n\n            \"rules\": [\n                {\n                    \"src\": \"lldp_system_name\",  \n                    \"expression\": \"[0:3]\",          \n                    \"equals\": \"SENSOR\"  ,\n                    \"usage\": \"iot\"\n                },\n                {\n                    \"src\": \"radius_username\",  \n                    \"expression\": \"[0:3]\",          \n                    \"equals\": \"SENSOR\"  ,\n                    \"usage\": \"iot\"\n                }\n            ]\n        },\n\n        \"user\": {\n            \"mode\": \"access\",\n            \"stp_edge\": true,\n            \"port_auth\": \"dot1x\",\n            \"enable_mac_auth\": false,\n            \"guest_network\": null,\n            \"bypass_auth_when_server_down\": false\n        }\n    },\n\n    \"switch_matching\": {\n        \"enable\": true,\n\n        \"rules\": [\n            {\n                \"name\": \"match by name\",\n                \"match_name[0:3]\": \"abc\",\n                \"match_model\": \"EX4300\",\n\n                \"port_config\": {\n                    \"ge-0/0/0\": {\n                        \"usage\": \"uplink\"\n                    },\n                    \"ge-0/0/8-16,ge-1/0/0-47\": {\n                        \"usage\": \"ap\"\n                    },\n\n                    \"*\": {\n                        \"usage\": \"default\"\n                    }\n                }\n            },\n            {\n                \"name\": \"match by role\",\n                \"match_role\": \"access\",\n\n                \"port_config\": {\n                    \"ge-0/0/0\": {\n                        \"usage\": \"uplink\"\n                    }\n                }\n            }\n        ]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/networktemplates",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"networktemplates"
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nname|string|The name of the RF template\ncountry_code|string|optional, country code to use. If specified, this gets applied to all sites using the RF Template\nmodel_specific|object|overwrites for a specific model. If a band is specified, it will shadow the default.\nchannels|list|list of channels, null or empty array means auto\nbandwidth|int|channel width for the band, 20 / 40 / 80, 80 is only applicable for band_5\npower|int|tx power of the radio, 0 mean auto\npower_min|int|when power=0, min tx power to use, HW-specific values will be used if not set\npower_max|int|when power=0, max tx power to use, HW-specific values will be used if not set\npreamble|string|short / long / auto, default is short"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Update Devices(Group)",
+			"item": [
+				{
+					"name": "Device Naming",
+					"item": [
+						{
+							"name": "getOrgInventory_Naming",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "6e9cc6a4-9f0e-4487-bb08-e4f0d0970fd6",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.collectionVariables.set(\"c_device_id\", jsonData[0].id);",
+											"pm.collectionVariables.set(\"c_site_id\", jsonData[0].site_id);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?mac={{mac}}",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"query": [
+										{
+											"key": "mac",
+											"value": "{{mac}}"
+										}
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": "{{org_id}}"
+										}
+									]
+								},
+								"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+											"protocol": "https",
+											"host": [
+												"{{hosts}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":org_id",
+												"inventory"
+											],
+											"variable": [
+												{
+													"key": "org_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "renameDevice",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "421eff8c-6e1c-4fd2-b13e-2c82120f1f66",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test(\"Response Shows Name set\", function() {",
+											"    pm.expect(jsonData.name == pm.variables.get(\"device_name\"))",
+											"});",
+											"",
+											"",
+											"pm.collectionVariables.unset(\"c_device_id\");",
+											"pm.collectionVariables.unset(\"c_site_id\");",
+											"pm.collectionVariables.unset(\"device_id\")",
+											"pm.collectionVariables.unset(\"site_id\")",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"{{device_name}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"devices",
+										":device_id"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{c_site_id}}"
+										},
+										{
+											"key": "device_id",
+											"value": "{{c_device_id}}"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"sites",
+												":site_id",
+												"devices",
+												":device_id"
+											],
+											"variable": [
+												{
+													"key": "site_id",
+													"value": ""
+												},
+												{
+													"key": "device_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "{\n    \"name\": \"conference room\",\n    \"notes\": \"slightly off center\",\n    \"map_id\": \"63eda950-c6da-11e4-a628-60f81dd250cc\",\n    \"x\": 53.5,\n    \"y\": 173.1,\n    \"orientation_overwrite\": true,\n    \"orientation\": 45,\n    \"height\": 3,\n    \"radio_config\": {\n        \"band_24\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 20,\n            \"power\": 1,\n            \"antenna_mode\": \"1x1\",\n            \"allow_rrm_disable\": false\n        },\n        \"band_5\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 40,\n            \"power\": 0,\n            \"antenna_mode\": \"default\"\n        },\n        \"ant_gain_24\": 4,\n        \"ant_gain_5\": 5,\n        \"band_24_usage\": \"5\",\n        \"band_5_on_24_radio\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 40,\n            \"power\": 0,\n            \"antenna_mode\": \"default\"\n        },\n        \"scanning_enabled\": true\n    },\n    \"ip_config\": {\n        \"type\": \"static\",\n        \"ip\": \"10.2.1.1\",\n        \"netmask\": \"255.255.255.0\",\n        \"gateway\": \"10.2.1.254\",\n        \"type6\": \"static\",\n        \"ip6\": \"2607:f8b0:4005:808::2004\",\n        \"netmask6\": \"/32\",\n        \"gateway6\": \"2607:f8b0:4005:808::1\",\n        \"dns\": [\n            \"8.8.8.8\",\n            \"4.4.4.4\"\n        ],\n        \"dns_suffix\": [\n            \".mist.local\",\n            \".mist.com\"\n        ],\n        \"vlan_id\": 1,\n        \"mtu\": 0\n    },\n    \"ble_config\": {\n        \"power_mode\": \"custom\",\n        \"power\": 10,\n        \"beacon_enabled\": true,\n        \"beacon_rate_mode\": \"custom\",\n        \"beacon_rate\": 3,\n        \"beam_disabled\": [\n            1,\n            3,\n            6\n        ],\n        \"ibeacon_enabled\": true,\n        \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n        \"ibeacon_major\": 13,\n        \"ibeacon_minor\": 138,\n        \"ibeacon_adv_power\": -65,\n        \"ibeacon_beams\": \"default\",\n        \"eddystone_uid_enabled\": false,\n        \"eddystone_uid_namespace\": \"2818e3868dec25629ede\",\n        \"eddystone_uid_instance\": \"5c5b35000001\",\n        \"eddystone_uid_freq_msec\": 200,\n        \"eddystone_uid_adv_power\": -65,\n        \"eddystone_uid_beams\": \"default\",\n        \"eddystone_url_enabled\": false,\n        \"eddystone_url_url\": \"https://www.abc.com\",\n        \"eddystone_url_freq_msec\": 1000,\n        \"eddystone_url_adv_power\": -65,\n        \"eddystone_url_beams\": \"2-4,7\"\n    },\n    \"usb_config\": {\n        \"enabled\": true,\n        \"type\": \"imagotag\",\n        \"host\": \"1.1.1.1\",\n        \"channel\": 3,\n        \"port\": 0,\n        \"verify_cert\": false,\n        \"cacert\": \"\"\n    },\n    \"led\": {\n        \"enabled\": true,\n        \"brightness\": 255\n    },\n    \"mesh\": {\n        \"enabled\": true,\n        \"role\": \"base\",\n        \"group\": 0\n    },\n    \"switch_config\": {\n        \"enabled\": true,\n        \"eth0\": {\n            \"vlan_ids\": [\n                1,\n                3055\n            ],\n            \"port_vlan_id\": 1\n        }\n    },\n    \"iot_config\": {\n        \"DO\": {\n            \"enabled\": true,\n            \"value\": 1\n        },\n        \"DI1\": {\n            \"name\": \"motion\",\n            \"enabled\": true\n        },\n        \"A1\": {\n            \"name\": \"pulled-up analog\",\n            \"enabled\": true\n        }\n    },\n    \"disable_eth1\": false,\n    \"disable_module\": false,\n    \"poe_passthrough\": false,\n    \"pwr_config\": {\n        \"base\": 2000\n    },\n    \"vars\": {\n        \"RADIUS_SECRET\": \"11s64632d\",\n        \"RADIUS_IP1\": \"172.31.2.5\"\n    },\n    \"ntp_servers\": [],\n    \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\",\n    \"image1_url\": \"https://url/to/image.png\"\n}"
+								}
+							]
+						}
+					],
+					"description": "This collection will use a CSV Template to rename multiple devices in an org.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is your Mist org_id, it's required to know which org to pull the current inventory from.\n\n\nCSV Required Values:\nmac - This is the mac address for the device you wish to name.\ndevice_name - Thi is the new name you wish for the device to be.\n\n\n\n\nExample CSV:\n\n```\ndevice_name,mac\nJakeAP43, aabbccddeeff\nRyanAP43, bbccddeeff11\n```",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "206ce590-a390-4192-9fee-b6c12acf84f1",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "edc5f0ef-86c7-4f21-bf50-d4e330c553f7",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Device IP",
+					"item": [
+						{
+							"name": "getOrgInventory_IP",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "2ecd5a8c-3309-4e1b-824e-bcac1a458abc",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.collectionVariables.set(\"c_device_id\", jsonData[0].id);",
+											"pm.collectionVariables.set(\"c_site_id\", jsonData[0].site_id);",
+											"pm.collectionVariables.set(\"c_device_type\", jsonData[0].type);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?mac={{mac}}",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"query": [
+										{
+											"key": "mac",
+											"value": "{{mac}}"
+										}
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": "{{org_id}}"
+										}
+									]
+								},
+								"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+											"protocol": "https",
+											"host": [
+												"{{hosts}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":org_id",
+												"inventory"
+											],
+											"variable": [
+												{
+													"key": "org_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "ipDevice",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"id": "01ce7e3e-ae93-48b8-b912-c9eeef6fe730",
+										"exec": [
+											"var req_body = {\"ip_config\": {\"type\": \"{{ip_type}}\", \"ip\": \"{{ip_address}}\", \"netmask\": \"{{netmask}}\", \"gateway\": \"{{gateway}}\", \"dns\": [ \"{{dns_1}}\", \"{{dns_2}}\" ], \"dns_suffix\": [ \"{{dns_suffix}}\" ]  }};",
+											"",
+											"if(pm.collectionVariables.get(\"c_device_type\") == \"switch\"){",
+											"        req_body.ip_config.network = pm.variables.get(\"network_name\")",
+											"    } else if(pm.collectionVariables.get(\"c_device_type\") == \"ap\"){",
+											"        if (pm.variables.get(\"vlan_id\") != \"\"){",
+											"                    req_body.ip_config.vlan_id = pm.variables.get(\"vlan_id\")",
+											"        }",
+											"    };",
+											"pm.collectionVariables.set(\"c_req_body\", JSON.stringify(req_body))"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"id": "d1e0790d-2063-496d-9f33-cef660919ca0",
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test(\"Response IP Shows IP set\", function() {",
+											"    pm.expect(jsonData.ip_config.ip == pm.variables.get(\"ip_address\"))",
+											"});",
+											"",
+											"pm.collectionVariables.unset(\"c_device_type\")",
+											"pm.collectionVariables.unset(\"c_site_id\")",
+											"pm.collectionVariables.unset(\"c_device_id\")",
+											"pm.collectionVariables.unset(\"site_id\")",
+											"pm.collectionVariables.unset(\"c_req_body\")"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{c_req_body}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"devices",
+										":device_id"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{c_site_id}}"
+										},
+										{
+											"key": "device_id",
+											"value": "{{c_device_id}}"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"sites",
+												":site_id",
+												"devices",
+												":device_id"
+											],
+											"variable": [
+												{
+													"key": "site_id",
+													"value": ""
+												},
+												{
+													"key": "device_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "{\n    \"name\": \"conference room\",\n    \"notes\": \"slightly off center\",\n    \"map_id\": \"63eda950-c6da-11e4-a628-60f81dd250cc\",\n    \"x\": 53.5,\n    \"y\": 173.1,\n    \"orientation_overwrite\": true,\n    \"orientation\": 45,\n    \"height\": 3,\n    \"radio_config\": {\n        \"band_24\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 20,\n            \"power\": 1,\n            \"antenna_mode\": \"1x1\",\n            \"allow_rrm_disable\": false\n        },\n        \"band_5\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 40,\n            \"power\": 0,\n            \"antenna_mode\": \"default\"\n        },\n        \"ant_gain_24\": 4,\n        \"ant_gain_5\": 5,\n        \"band_24_usage\": \"5\",\n        \"band_5_on_24_radio\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 40,\n            \"power\": 0,\n            \"antenna_mode\": \"default\"\n        },\n        \"scanning_enabled\": true\n    },\n    \"ip_config\": {\n        \"type\": \"static\",\n        \"ip\": \"10.2.1.1\",\n        \"netmask\": \"255.255.255.0\",\n        \"gateway\": \"10.2.1.254\",\n        \"type6\": \"static\",\n        \"ip6\": \"2607:f8b0:4005:808::2004\",\n        \"netmask6\": \"/32\",\n        \"gateway6\": \"2607:f8b0:4005:808::1\",\n        \"dns\": [\n            \"8.8.8.8\",\n            \"4.4.4.4\"\n        ],\n        \"dns_suffix\": [\n            \".mist.local\",\n            \".mist.com\"\n        ],\n        \"vlan_id\": 1,\n        \"mtu\": 0\n    },\n    \"ble_config\": {\n        \"power_mode\": \"custom\",\n        \"power\": 10,\n        \"beacon_enabled\": true,\n        \"beacon_rate_mode\": \"custom\",\n        \"beacon_rate\": 3,\n        \"beam_disabled\": [\n            1,\n            3,\n            6\n        ],\n        \"ibeacon_enabled\": true,\n        \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n        \"ibeacon_major\": 13,\n        \"ibeacon_minor\": 138,\n        \"ibeacon_adv_power\": -65,\n        \"ibeacon_beams\": \"default\",\n        \"eddystone_uid_enabled\": false,\n        \"eddystone_uid_namespace\": \"2818e3868dec25629ede\",\n        \"eddystone_uid_instance\": \"5c5b35000001\",\n        \"eddystone_uid_freq_msec\": 200,\n        \"eddystone_uid_adv_power\": -65,\n        \"eddystone_uid_beams\": \"default\",\n        \"eddystone_url_enabled\": false,\n        \"eddystone_url_url\": \"https://www.abc.com\",\n        \"eddystone_url_freq_msec\": 1000,\n        \"eddystone_url_adv_power\": -65,\n        \"eddystone_url_beams\": \"2-4,7\"\n    },\n    \"usb_config\": {\n        \"enabled\": true,\n        \"type\": \"imagotag\",\n        \"host\": \"1.1.1.1\",\n        \"channel\": 3,\n        \"port\": 0,\n        \"verify_cert\": false,\n        \"cacert\": \"\"\n    },\n    \"led\": {\n        \"enabled\": true,\n        \"brightness\": 255\n    },\n    \"mesh\": {\n        \"enabled\": true,\n        \"role\": \"base\",\n        \"group\": 0\n    },\n    \"switch_config\": {\n        \"enabled\": true,\n        \"eth0\": {\n            \"vlan_ids\": [\n                1,\n                3055\n            ],\n            \"port_vlan_id\": 1\n        }\n    },\n    \"iot_config\": {\n        \"DO\": {\n            \"enabled\": true,\n            \"value\": 1\n        },\n        \"DI1\": {\n            \"name\": \"motion\",\n            \"enabled\": true\n        },\n        \"A1\": {\n            \"name\": \"pulled-up analog\",\n            \"enabled\": true\n        }\n    },\n    \"disable_eth1\": false,\n    \"disable_module\": false,\n    \"poe_passthrough\": false,\n    \"pwr_config\": {\n        \"base\": 2000\n    },\n    \"vars\": {\n        \"RADIUS_SECRET\": \"11s64632d\",\n        \"RADIUS_IP1\": \"172.31.2.5\"\n    },\n    \"ntp_servers\": [],\n    \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\",\n    \"image1_url\": \"https://url/to/image.png\"\n}"
+								}
+							]
+						}
+					],
+					"description": "This collection will use a CSV Template to static IP multiple sites.\n(Reverting to DHCP will come in a later release)\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is the org id of the org that contains the devices to statically IP'd.\n\n\nCSV Required Values:\nmac\nip_type \\\\static or DHCP\nif type = static\n    ip_address\n    netmask\n    gateway\n    dns_1\n    dns_2\n    dns_suffix\n    network_name \\\\Switching only\n\nCSV Optional Values:\nvlan_id \\\\ AP only.\n\nExample CSV:\n```\nmac,ip_type,ip_address,netmask,gateway,dns_1,dns_2,dns_suffix,vlan_id,network_name\nxxxxxxxxxxxx,static,192.168.5.65,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,1,\nxxxxxxxxxxxx,static,192.168.5.66,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,,default\n```",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "f426d465-0e2f-48c8-9e33-dae2716e2de5",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "f97bc5b7-d806-4381-b1b1-863738267ec2",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "b10fc763-1933-4c14-a790-7d4538c7bb38",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "bdad8105-43d0-4575-a038-045eacd4415f",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "token {{apitoken}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "Authorization",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "b389e36e-71d0-4a84-940d-ad5c91e13ede",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "531040ef-1820-4a01-abb5-94d86cbfe46d",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "d2a30c9b-558e-4988-a33c-ac56f5607475",
+			"key": "google_api_key",
+			"value": ""
+		},
+		{
+			"id": "cb324147-7c74-48fa-956c-95973baf5e27",
+			"key": "site_name",
+			"value": ""
+		},
+		{
+			"id": "6dc3eec3-ac49-4e30-80f0-fe3ba41e692b",
+			"key": "apitoken",
+			"value": ""
+		},
+		{
+			"id": "8b20896f-78d1-423a-83de-759424c61051",
+			"key": "device_name",
+			"value": ""
+		},
+		{
+			"id": "2798b574-1cf0-4871-9557-cf999f8e7f75",
+			"key": "host",
+			"value": "api.mist.com"
+		},
+		{
+			"id": "03b3ed0d-5af7-4afe-84f3-c0a417619dd2",
+			"key": "force_reassignment",
+			"value": ""
+		},
+		{
+			"id": "37fee503-1f08-4fe2-8e68-88fcba3a0766",
+			"key": "device_id",
+			"value": ""
+		},
+		{
+			"id": "f083593c-0702-4733-b5f6-320354b340cf",
+			"key": "firmware_version",
+			"value": ""
+		},
+		{
+			"id": "ac8f4880-517f-44b8-933f-5b63a4062dca",
+			"key": "saveData",
+			"value": ""
+		},
+		{
+			"id": "6e3819cc-17f3-455f-8519-1e1c8345af54",
+			"key": "c_webhook_id",
+			"value": ""
+		},
+		{
+			"id": "642e74e6-4caf-494f-a9e8-fdd92b6c642c",
+			"key": "webhook_name",
+			"value": ""
+		},
+		{
+			"id": "28dc8236-44cf-495c-bcca-594ec2ed164f",
+			"key": "country_code",
+			"value": ""
+		},
+		{
+			"id": "99c1324e-20bc-485c-886c-c0df28626f33",
+			"key": "site_address",
+			"value": ""
+		},
+		{
+			"id": "66636d3d-80bb-48b0-ad8d-383f9404d017",
+			"key": "rf_template_id",
+			"value": ""
+		}
+	],
+	"protocolProfileBehavior": {}
+}
