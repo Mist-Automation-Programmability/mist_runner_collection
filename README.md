@@ -1,14 +1,21 @@
 # mist_runner_collection
 This collection provides a number of Mist automation tasks that can be performed with Postman Runner.  Each folder represents a task.  The details can be found under the description of each subfolder.
 
-Current Tasks include:
+### Current Tasks include:
 - Site Creation
-- Device Assignment
-- Device Naming
+- Inventory Assignment
+- Bulk Device Actions:
+  - Device Naming
+  - Device IP
+- Bulk Site Actions:
+  - Firmware Settings
+  - Webhook
+  - Generic Site Update (put in whatever site settings you want)
+  
 
-The details for each can be found under the details of that folder.
+The details for each can be found under the details of each folder.
 
-Note: Site creation requires a google maps API key.
+Note: Site creation requires a google maps API key currently.
 
 ## Installation:
 There is only really one file needed, the `Mist_Runner_collection.json` from the `Postman Collection` folder
@@ -22,20 +29,18 @@ You can download this file directly, or clone the git repo which includes some e
 2. Select file and click `Upload Files`
 3. Browse and select the `Mist_Runner_collection.json` that you downloaded, click open
 
-
 ## Dealing with Variables
 These collection use a tremendous number of environmental variables to make things work.
 Typically, each folder containing and automation will define which variables it needs.  These can be set multiple ways.
-Current required variables are:
-- apitoken
-- org_id
+Most commonly required variables are
+- `{{apitoken}}`
+- `{{org_id}}`
 
 #### Environmental Variables
 The preferred method for setting these variables is through an environment.  Most of the collection will require an `{{apitoken}}` and an `{{org_id}}` to be defined.  You can create a new Environment and define/set these variables.
 
 #### Collection Variables
 On the `Mist Runner Collection` you can click the the dots and select `Edit`.  On the `Variables` tab you can set either the `Initial Value` or the `Current Value` for the required Variables
-
 
 ## Creating CSV Files
 In the `Examples` Folder, there are a number of example CSV files for the different Runners.  You can start with these, or create a new one.
@@ -57,6 +62,10 @@ Once you've browsed to here, you can select the options.
 Since this is postman and more sophisticated autmation tools, you are reliant on the output to verify that these actions have been completed successfully.
 
 (Update) I have attempted to do some validation of results with the testing features.  During Runner execution you should see test failing if some assumptions aren't met.
+
+## Update Site Actions:
+Instead of requiring a CSV, there is a call called `getSites - Send And Download`.  This will download a .json file with all of the site data that you can iterate through.  This has not been tested with orgs with 1k+ sites.
+
 
 ### Inherited Works
 Most of the Mist API calls come from the Thomas Munzer Mist Postman collection.  They have been modified to with additional tests and scripts.
