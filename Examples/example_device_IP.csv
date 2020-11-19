@@ -1,3 +1,3 @@
-mac,ip_type,ip_address,netmask,gateway,dns_1,dns_2,dns_suffix,vlan_id,network_name
+mac_address,ip_type,ip_address,netmask,gateway,dns_1,dns_2,dns_suffix,vlan_id,network_name
 d420b0011cec,static,192.168.5.65,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,1,
 78507cf7246c,static,192.168.5.66,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,,default
