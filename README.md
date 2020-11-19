@@ -61,7 +61,7 @@ Once you've browsed to here, you can select the options.
 ## Verifying the Results:
 Since this is postman and more sophisticated autmation tools, you are reliant on the output to verify that these actions have been completed successfully.
 
-(Update) I have attempted to do some validation of results with the testing features.  During Runner execution you should see test failing if some assumptions aren't met.
+(Update) I have attempted to do some validation of results with the testing features.  During Runner execution you should see test failing if some assumptions aren't met.  This is a work in progress.  If there are tests you would like to see, please open an issue.
 
 ## Update Site Actions:
 Instead of requiring a CSV, there is a call called `getSites - Send And Download`.  This will download a .json file with all of the site data that you can iterate through.  This has not been tested with orgs with 1k+ sites.
