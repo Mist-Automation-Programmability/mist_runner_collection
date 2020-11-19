@@ -1,2 +1,2 @@
-site_name,mac_address,device_name,force_reassignment
+site_name,mac_address,device_name,no_reassignment
 Idaho,d420b0011cec,device_002,true
