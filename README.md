@@ -3,14 +3,16 @@ This collection provides a number of Mist automation tasks that can be performed
 
 ### Current Tasks include:
 - Site Creation
+- Site Creation with Settings
 - Inventory Assignment
-- Bulk Device Actions:
+- Update Sites(Group):
+  - Firmware Settings
+  - Add Webhook to Sites
+  - Generic Site Update (put in whatever site settings you want)
+  - Delete Sites
+- Update Devices (Group):
   - Device Naming
   - Device IP
-- Bulk Site Actions:
-  - Firmware Settings
-  - Webhook
-  - Generic Site Update (put in whatever site settings you want)
   
 
 The details for each can be found under the details of each folder.
@@ -35,6 +37,8 @@ Typically, each folder containing and automation will define which variables it 
 Most commonly required variables are
 - `{{apitoken}}`
 - `{{org_id}}`
+
+*Note* If you have variables defined in your environment that conflict with the variables used in your .csv or .json files, the ones used in your environment will take preference.  To reduce this, disable any variables in your environment that are not needed.
 
 #### Environmental Variables
 The preferred method for setting these variables is through an environment.  Most of the collection will require an `{{apitoken}}` and an `{{org_id}}` to be defined.  You can create a new Environment and define/set these variables.
