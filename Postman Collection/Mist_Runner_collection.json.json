@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "8111ab86-8014-49cb-8551-e9217e96cd25",
-		"name": "Mist Runner Collections 0.2",
+		"name": "Mist Runner Collections 0.2.1",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -214,8 +214,8 @@
 							"variable": [
 								{
 									"key": "orgr_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"type": "string",
+									"value": "{{org_id}}"
 								}
 							]
 						}
@@ -330,8 +330,7 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						},
@@ -637,10 +636,9 @@
 							],
 							"variable": [
 								{
-									"id": "2fb7f8d7-8ad8-4c35-8cac-3f25580df72e",
 									"key": "orgr_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"type": "string",
+									"value": "{{org_id}}"
 								}
 							]
 						}
@@ -694,6 +692,7 @@
 									"});",
 									"pm.test(\"Site ID  is present\", function() {",
 									"  pm.expect(jsonData).to.have.property(\"id\");",
+									"  pm.collectionVariables.set(\"c_site_id\", jsonData.id)",
 									"});",
 									"pm.test(\"Name matches CSV\", function() {",
 									"  pm.expect(jsonData.name).to.equal(pm.variables.get(\"site_name\"));",
@@ -754,10 +753,8 @@
 							],
 							"variable": [
 								{
-									"id": "4fcc9902-a8c5-49ff-b197-216106216d55",
 									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						},
@@ -969,10 +966,8 @@
 							],
 							"variable": [
 								{
-									"id": "afc07448-6ece-4f17-b5a7-5d57c5f9f16c",
 									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						},
@@ -1181,10 +1176,8 @@
 							],
 							"variable": [
 								{
-									"id": "b6747aff-1bc1-45eb-bf79-f987d10580a9",
 									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						},
@@ -1319,8 +1312,8 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}",
-											"type": "string"
+											"type": "string",
+											"value": "{{site_id}}"
 										}
 									]
 								},
@@ -1419,8 +1412,8 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{id}}",
-											"type": "string"
+											"type": "string",
+											"value": "{{id}}"
 										}
 									]
 								},
@@ -1586,7 +1579,6 @@
 									],
 									"variable": [
 										{
-											"id": "beacd86d-60a4-4848-b2ff-5923c13a6f74",
 											"key": "site_id",
 											"value": "{{site_id}}",
 											"type": "string"
@@ -2020,10 +2012,8 @@
 									],
 									"variable": [
 										{
-											"id": "5912b50b-d405-407e-ba6b-35183555e255",
 											"key": "orgr_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								}
@@ -2141,8 +2131,7 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}",
-											"type": "string"
+											"value": "{{site_id}}"
 										}
 									]
 								},
@@ -2243,93 +2232,6 @@
 					"_postman_isSubFolder": true
 				},
 				{
-					"name": "Find Duplicate SSIDs",
-					"item": [
-						{
-							"name": "getSiteWlanDerived Copy",
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "https://{{host}}/api/v1/sites/:site_id/wlans/derived?resolve={{resolve}}",
-									"protocol": "https",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"sites",
-										":site_id",
-										"wlans",
-										"derived"
-									],
-									"query": [
-										{
-											"key": "resolve",
-											"value": "{{resolve}}",
-											"description": "whether to resolve SITE_VARS, default is false"
-										}
-									],
-									"variable": [
-										{
-											"id": "68a19c2d-0b3f-4bb9-9340-877658fa6a54",
-											"key": "site_id",
-											"value": "{{site_id}}",
-											"type": "string"
-										}
-									]
-								}
-							},
-							"response": [
-								{
-									"name": "GET Derived - WLAN ",
-									"originalRequest": {
-										"method": "GET",
-										"header": [],
-										"url": {
-											"raw": "https://{{host}}/api/v1/sites/:site_id/wlans/derived?resolve=false",
-											"protocol": "https",
-											"host": [
-												"{{host}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"sites",
-												":site_id",
-												"wlans",
-												"derived"
-											],
-											"query": [
-												{
-													"key": "resolve",
-													"value": "false",
-													"description": "whether to resolve SITE_VARS, default is false"
-												}
-											],
-											"variable": [
-												{
-													"key": "site_id",
-													"value": ""
-												}
-											]
-										}
-									},
-									"status": "OK",
-									"code": 200,
-									"_postman_previewlanguage": "json",
-									"header": [],
-									"cookie": [],
-									"body": "[\n    {\n        \"ssid\": \"Guest\",\n        \"for_site\": false,\n        \"template_id\": \"867860f2-dd82-3677-54a5-4d6b139c96ca\",\n        \"template_name\" \"west coast\",\n        ...\n    },\n    {\n        \"ssid\": \"Guest\",\n        \"for_site\": true,\n        ...\n    }\n]"
-								}
-							]
-						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
-				},
-				{
 					"name": "getSites - Send And Download",
 					"request": {
 						"method": "GET",
@@ -2349,7 +2251,6 @@
 							],
 							"variable": [
 								{
-									"id": "f7fcc3b1-c3ec-46c3-9a57-5b43079b455d",
 									"key": "orgr_id",
 									"value": "{{org_id}}",
 									"type": "string"
@@ -2481,13 +2382,11 @@
 							],
 							"variable": [
 								{
-									"id": "ab28e085-0aa9-4060-87a3-eeeb61a56ac6",
 									"key": "org_id",
 									"value": "{{org_id}}",
 									"type": "string"
 								},
 								{
-									"id": "f1a9b0c2-ea0c-4e67-85d1-f697f22e188a",
 									"key": "networktemplate_id",
 									"value": "{{networktemplate_id}}",
 									"type": "string"
@@ -2542,7 +2441,6 @@
 							],
 							"variable": [
 								{
-									"id": "fc720bbe-3467-4ee6-8352-dd9fe4590bca",
 									"key": "org_id",
 									"value": "{{org_id}}",
 									"type": "string"
@@ -2603,8 +2501,7 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								},
@@ -2699,13 +2596,11 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}",
-											"type": "string"
+											"value": "{{c_site_id}}"
 										},
 										{
 											"key": "device_id",
-											"value": "{{c_device_id}}",
-											"type": "string"
+											"value": "{{c_device_id}}"
 										}
 									]
 								}
@@ -2823,8 +2718,7 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								},
@@ -2937,13 +2831,11 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}",
-											"type": "string"
+											"value": "{{c_site_id}}"
 										},
 										{
 											"key": "device_id",
-											"value": "{{c_device_id}}",
-											"type": "string"
+											"value": "{{c_device_id}}"
 										}
 									]
 								}
@@ -3081,102 +2973,102 @@
 	],
 	"variable": [
 		{
-			"id": "6e6ce7d5-791f-4698-ab87-6495528597c0",
+			"id": "2dc65eab-68cd-458d-802b-9f2a7584cfdf",
 			"key": "google_api_key",
 			"value": ""
 		},
 		{
-			"id": "b6b7a5a7-08c9-4f5a-b088-29755e7a9b1d",
+			"id": "69d7a5f1-d3bb-4ff6-9055-c8a88477edeb",
 			"key": "site_name",
 			"value": ""
 		},
 		{
-			"id": "e0abdb8d-08dd-44c7-90d2-9c1d0bea7652",
+			"id": "ceca7784-f584-4d53-9ebc-a4099f884f17",
 			"key": "apitoken",
 			"value": ""
 		},
 		{
-			"id": "60437045-f25f-47e1-bece-01793b3861cb",
+			"id": "a41fde04-7525-4c87-ae6d-70c582610f1b",
 			"key": "device_name",
 			"value": ""
 		},
 		{
-			"id": "1f74b1b3-96d1-4204-a5fe-3e4adb40bd23",
+			"id": "78ac7892-e386-4cd0-a44b-12d9e5402c10",
 			"key": "host",
 			"value": "api.mist.com"
 		},
 		{
-			"id": "441dc949-ce3d-4b32-b191-79b5ce5e25ed",
+			"id": "c92a017b-4ba0-4b27-8981-da533d23156f",
 			"key": "force_reassignment",
 			"value": ""
 		},
 		{
-			"id": "81e45829-0abd-4710-8683-b82db36e5807",
+			"id": "8a6be87b-5d99-4d90-af26-eed3d1a6acf7",
 			"key": "device_id",
 			"value": ""
 		},
 		{
-			"id": "86671b2c-0f2a-474d-9350-4a4313987424",
+			"id": "d1cfea31-bc46-4869-8e03-47967bece423",
 			"key": "firmware_version",
 			"value": ""
 		},
 		{
-			"id": "7b043d8e-35b9-4d28-859c-c3ff041f465e",
+			"id": "fc4c34c9-a8f2-4996-a432-f00043d67769",
 			"key": "saveData",
 			"value": ""
 		},
 		{
-			"id": "6b517f12-6123-4cdd-ad5f-c2621dad4861",
+			"id": "ca8aaf9e-e6d7-47d4-823e-ebf989ac2c21",
 			"key": "c_webhook_id",
 			"value": ""
 		},
 		{
-			"id": "1f81587e-0c71-43cb-9e35-8c49095c81cb",
+			"id": "3d6a7d18-55e4-441c-b802-d2773faca19a",
 			"key": "webhook_name",
 			"value": ""
 		},
 		{
-			"id": "a5482959-6640-4fd5-8de1-53ece7cf130f",
+			"id": "d10c2acd-1178-4ce8-8c60-0f205416e51f",
 			"key": "country_code",
 			"value": ""
 		},
 		{
-			"id": "8975b9c9-422c-412c-a471-745ed5190f08",
+			"id": "5e99105b-c86c-4bf2-a503-098d5272caa6",
 			"key": "c_site_address",
 			"value": ""
 		},
 		{
-			"id": "1f82390e-a83c-4482-852f-ea37e86766a7",
+			"id": "9357040d-9e86-42a2-a3aa-8ad2399b9a46",
 			"key": "rf_template_id",
 			"value": ""
 		},
 		{
-			"id": "6856f97c-5df4-4e00-99b8-369f677d6eb0",
+			"id": "cf878fa9-4731-4951-a029-5a9e68dcdb78",
 			"key": "c_device_id",
 			"value": ""
 		},
 		{
-			"id": "d22e0ec4-b3d7-468d-a3ce-5692ef56fef3",
+			"id": "be45add6-9246-4bab-a262-96e960dac217",
 			"key": "c_device_type",
 			"value": ""
 		},
 		{
-			"id": "fd7bb02b-e187-43c8-90bc-79ba11310860",
+			"id": "4b439d7e-342a-409d-9f4d-6adb216e8227",
 			"key": "c_site_id",
 			"value": ""
 		},
 		{
-			"id": "04870a75-0b5c-486a-a09b-7f1c85f9f0b0",
+			"id": "8c667566-d8bb-44d4-b6e4-3ed52a9ff6bb",
 			"key": "lat",
 			"value": ""
 		},
 		{
-			"id": "eaf480b4-bf24-4ee6-8c14-be5b9c95fde2",
+			"id": "cee8e691-2e13-4d64-8d73-22fa7e72b1c5",
 			"key": "lng",
 			"value": ""
 		},
 		{
-			"id": "2c79016a-e0e2-4d46-9c8e-f4d22d2939e0",
+			"id": "269b6bf8-1e58-4a28-a1b8-f91a2b501ade",
 			"key": "formatted_address",
 			"value": ""
 		}
