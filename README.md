@@ -14,6 +14,8 @@ This collection provides a number of Mist automation tasks that can be performed
   - Device Naming
   - Device IP
   - Device Notes  
+- Troubleshooting - Via Send/Download
+  - Upgrade APs Not Running Version
 
 The details for each can be found under the details of each folder.
 

@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "8111ab86-8014-49cb-8551-e9217e96cd25",
-		"name": "Mist Runner Collections 0.2.2",
+		"name": "Mist Runner Collections 0.2.3",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -2256,7 +2256,7 @@
 							]
 						}
 					],
-					"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
+					"description": "This collection will use a CSV Template to delete multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n{{areYouSure}} This is something you must set in your environment or the delete function will not proceed.  Make sure you clear this variable when you are done.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 					"auth": {
 						"type": "apikey",
 						"apikey": [
@@ -2525,8 +2525,28 @@
 									"script": {
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
+											"proceedCheck = true",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"if (jsonData.length != 1) {",
+											"        console.log(`Did not find exactly 1 device, Found ${jsonData.length}`)",
+											"        proceedCheck = false",
+											"        };",
+											"pm.test(\"Results length > 0\", function() {",
+											"  pm.expect(jsonData.length).to.equal(1);",
+											"});",
+											"",
+											"",
+											"if (proceedCheck == false){",
+											"     nextRequest = null;",
+											"     postman.setNextRequest(nextRequest);",
+											"};",
+											"",
 											"pm.collectionVariables.set(\"c_device_id\", jsonData[0].id);",
-											"pm.collectionVariables.set(\"c_site_id\", jsonData[0].site_id);"
+											"pm.collectionVariables.set(\"c_site_id\", jsonData[0].site_id);",
+											"",
+											""
 										],
 										"type": "text/javascript"
 									}
@@ -2749,7 +2769,8 @@
 											"",
 											"",
 											"if (proceedCheck == false){",
-											"     nextRequest = null",
+											"     nextRequest = null;",
+											"     postman.setNextRequest(nextRequest);",
 											"};",
 											"",
 											"pm.collectionVariables.set(\"c_device_id\", jsonData[0].id);",
@@ -2967,6 +2988,24 @@
 									"script": {
 										"exec": [
 											"var jsonData = JSON.parse(responseBody);",
+											"proceedCheck = true",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"if (jsonData.length != 1) {",
+											"        console.log(`Did not find exactly 1 device, Found ${jsonData.length}`)",
+											"        proceedCheck = false",
+											"        };",
+											"pm.test(\"Results length > 0\", function() {",
+											"  pm.expect(jsonData.length).to.equal(1);",
+											"});",
+											"",
+											"",
+											"if (proceedCheck == false){",
+											"     nextRequest = null;",
+											"     postman.setNextRequest(nextRequest);",
+											"};",
+											"",
 											"pm.collectionVariables.set(\"c_device_id\", jsonData[0].id);",
 											"pm.collectionVariables.set(\"c_site_id\", jsonData[0].site_id);",
 											"pm.collectionVariables.set(\"c_device_type\", jsonData[0].type);"
@@ -3205,6 +3244,340 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Troubleshooting - Via Send/Download",
+			"item": [
+				{
+					"name": "Upgrade APs Not Running Version",
+					"item": [
+						{
+							"name": "getSiteDeviceStatsDetailsUpgrade",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"proceedCheck = true",
+											"",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"",
+											"var desVersion = pm.collectionVariables.get(\"desired_ap_version\")",
+											"if (desVersion === \"\") {",
+											"    desVersion = pm.variables.get(\"desired_ap_version\")",
+											"    console.log(\"falling back to environment\")",
+											"}",
+											"pm.test(\"desired_ap_version set\", function() {",
+											"  pm.expect(desVersion).to.include(\".\");",
+											"});",
+											"if (desVersion.startsWith(\".\")) {",
+											"        console.log(`desired_ap_version does not appear set`)",
+											"        proceedCheck = false",
+											"        };",
+											"",
+											"",
+											"pm.test(\"AP NOT on Current Version.\", function() {",
+											"  pm.expect(jsonData.version).to.not.equal(desVersion);",
+											"});",
+											"",
+											"if (jsonData.version == desVersion) {",
+											"        proceedCheck = false;",
+											"        };",
+											"",
+											"if (proceedCheck == false){",
+											"     nextRequest = null;",
+											"     postman.setNextRequest(nextRequest);",
+											"};",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/stats/devices/{{id}}",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"stats",
+										"devices",
+										"{{id}}"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{site_id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "upgradeSiteDevice",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"",
+											"pm.test(\"Response status is starting\", function() {",
+											"  pm.expect(jsonData.status).to.equal(\"starting\");",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-CSRFToken",
+										"value": "{{csrftoken}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"version\": \"{{desired_ap_version}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id/upgrade",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"devices",
+										":device_id",
+										"upgrade"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{site_id}}"
+										},
+										{
+											"key": "device_id",
+											"value": "{{id}}"
+										}
+									]
+								},
+								"description": " #### Body Parameters\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n version|string|default is stable\r\n \r\n  #### Body Response\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n timestamp|float|timestamp\r\n status|string|starting / inprogress / success / error / scheduled\r\n status_id|int|the internal status id"
+							},
+							"response": [
+								{
+									"name": "Upgrade - Device",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"version\": \"3.1.5\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id/upgrade",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"sites",
+												":site_id",
+												"devices",
+												":device_id",
+												"upgrade"
+											],
+											"variable": [
+												{
+													"key": "site_id",
+													"value": ""
+												},
+												{
+													"key": "device_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "{\n    \"timestamp\": 1428949501,\n    \"status\": \"inprogress\",\n    \"status_id\": 5\n}"
+								}
+							]
+						}
+					],
+					"description": "This collection will use a the exported JSON payload of all sites to upgrade all sites that do not match the `desired_ap_version` variable\n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is your Mist organization\n{{desired_ap_version}} This is the version you want the APs upgraded to.\n\n\nPlease make sure you don't have `site_id` or `id` defined in your environment, or it could cause those values to override the collection.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "getOrgInventoryAPs - SendAndDownload",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?type=ap",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"inventory"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "ap"
+								}
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}"
+								}
+							]
+						},
+						"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
+					},
+					"response": [
+						{
+							"name": "OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+									"protocol": "https",
+									"host": [
+										"{{hosts}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
+						}
+					]
+				}
+			],
+			"description": "For each of these bulk actions, you will need to run the \"getOrgInventoryAPs - SendAndDownload\" action first, and perform the send/download.  This will create a json file that contains the AP inventory for runner to iterate through.\n\nRequired Environment Variables:\n{{apitoken}}\n{{org_id}}\n\nPlease note: Make sure you do not have an existing environment variable called `site_id` or `id` or this will supercede the values coming from the collection runner.\n\n\n\n\n",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		}
 	],
 	"auth": {
@@ -3326,6 +3699,10 @@
 		{
 			"key": "areYouSure",
 			"value": "false"
+		},
+		{
+			"key": "desired_ap_version",
+			"value": ""
 		}
 	]
 }
