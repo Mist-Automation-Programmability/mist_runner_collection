@@ -13,7 +13,7 @@ This collection provides a number of Mist automation tasks that can be performed
 - Update Devices (Group):
   - Device Naming
   - Device IP
-  
+  - Device Notes  
 
 The details for each can be found under the details of each folder.
 
