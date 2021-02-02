@@ -4,6 +4,7 @@ This collection provides a number of Mist automation tasks that can be performed
 ### Current Tasks include:
 - Site Creation
 - Site Creation with Settings
+- Site Cloning/Creation
 - Inventory Assignment
 - Update Sites(Group):
   - Firmware Settings
