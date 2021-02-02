@@ -1,6 +1,5 @@
-site_name,site_address,site_template_id
-CLONER - Idaho,"700 W Jefferson St, Boise, ID 83702",1e3cf22f-b807-4c4e-a7ab-148ccabe91e3
-CLONER - Utah,"350 State St, Salt Lake City, UT 84103",b7d531b3-2dac-4155-b9cc-edb72b0e9a7b
-CLONER - Oregon,"900 Court St NE, Salem, OR 97301",e608f8e5-d9e3-4628-9e76-7ac699a11e3b
-CLONER - Washington,"416 Sid Snyder Avenue SW, Olympia, Washington 98504",b7d531b3-2dac-4155-b9cc-edb72b0e9a7b
-
+site_name,site_address,site_template_id,site_template_name
+CLONER - Idaho,"700 W Jefferson St, Boise, ID 83702",1e3cf22f-b807-4c4e-a7ab-148ccabe91e3,
+CLONER - Utah,"350 State St, Salt Lake City, UT 84103",,"CLONER TEMPLATE SITE #2"
+CLONER - Oregon,"900 Court St NE, Salem, OR 97301",e608f8e5-d9e3-4628-9e76-7ac699a11e3b,
+CLONER - Washington,"416 Sid Snyder Avenue SW, Olympia, Washington 98504",b7d531b3-2dac-4155-b9cc-edb72b0e9a7b,

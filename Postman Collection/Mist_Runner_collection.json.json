@@ -912,32 +912,169 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var nextRequest = \"cloner_checkDupes\";",
+									"var nextRequest = \"cloner_getSiteSettingsFromTemplate\";",
+									"let jsonData = pm.response.json();",
+									"",
+									"var foundDuplicateSite = false;",
 									"var foundTemplateSite = false;",
-									"var jsonData = JSON.parse(responseBody);",
 									"",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
+									"// Check for duplicate site name in organizatiom",
+									"pm.test(\"Site name is unique\", () => {",
+									"    _.each(jsonData, (site) => {",
+									"        if (site.name == pm.iterationData.get(\"site_name\")) {",
+									"            foundDuplicateSite = true;",
+									"        }",
+									"        pm.expect(foundDuplicateSite, \"Duplicate site '\" + site.name + \"' exists: \" + site.id).to.be.false;",
+									"    });",
 									"});",
 									"",
-									"for (var i = 0; i < jsonData.length; i++) {",
-									"    if (jsonData[i].id == pm.variables.get(\"site_template_id\")) {",
-									"        console.log(\"Template site \" + jsonData[i].name + \" exists!\");",
-									"        pm.collectionVariables.set(\"site_template_id\", pm.variables.get(\"site_template_id\"));",
-									"        foundTemplateSite = true;",
+									"if (foundDuplicateSite) {",
+									"    console.warn(\"Duplicate site name found in organization, skipping '\" + pm.iterationData.get(\"site_name\") + \"'\");",
+									"    // Exit the runner iteration",
+									"    postman.setNextRequest(null);",
+									"} else {",
+									"    // Get template site details",
+									"    if ((pm.iterationData.get(\"site_template_id\") != \"\") && (pm.iterationData.get(\"site_template_id\") != null)) {",
+									"        // Check for site_template_id variable and lookup template site",
+									"        console.info(\"Searching for site by ID...\");",
+									"        for (var i = 0; i < jsonData.length; i++) {",
+									"            if (jsonData[i].id == pm.iterationData.get(\"site_template_id\")) {",
+									"                var data = jsonData[i];",
+									"",
+									"                if (data.id) {",
+									"                    pm.collectionVariables.set(\"c_site_template_id\", data.id);",
+									"                    // console.log(\"Setting site template ID to \" + pm.collectionVariables.get(\"c_site_template_id\"));",
+									"                }",
+									"",
+									"                if (data.name) {",
+									"                    pm.collectionVariables.set(\"c_site_template_name\", data.name);",
+									"                    // console.log(\"Setting site template name to \" + pm.collectionVariables.get(\"c_site_template_name\"));",
+									"                }",
+									"",
+									"                if (data.sitegroup_ids) {pm",
+									"                    pm.collectionVariables.set(\"c_sitegroup_ids\", JSON.stringify(data.sitegroup_ids));",
+									"                    // console.log(\"Site Group IDs: \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
+									"                }",
+									"",
+									"                if (data.rftemplate_id) {",
+									"                    pm.collectionVariables.set(\"c_rftemplate_id\", data.rftemplate_id);",
+									"                    // console.log(\"Setting RF Template ID to \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
+									"                }",
+									"",
+									"                if (data.secpolicy_id) {",
+									"                    pm.collectionVariables.set(\"c_secpolicy_id\", data.secpolicy_id);",
+									"                    // console.log(\"Setting Security Policy ID to \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
+									"                }",
+									"",
+									"                if (data.alarmtemplate_id) {",
+									"                    pm.collectionVariables.set(\"c_alarmtemplate_id\", data.alarmtemplate_id);",
+									"                    // console.log(\"Setting Alarm Template ID to \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
+									"                }",
+									"",
+									"                if (data.networktemplate_id) {",
+									"                    pm.collectionVariables.set(\"c_networktemplate_id\", data.networktemplate_id);",
+									"                    // console.log(\"Setting Network Template ID to \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
+									"                }",
+									"",
+									"                foundTemplateSite = true;",
+									"            }",
+									"        }",
+									"    } else if (((pm.iterationData.get(\"site_template_id\") == \"\") || (pm.iterationData.get(\"site_template_id\") == null)) && ((pm.iterationData.get(\"site_template_name\") != \"\") || (pm.iterationData.get(\"site_template_name\") != null))) {",
+									"        // If site_template_id is not set, use site_template_name to lookup template site",
+									"        console.info(\"Searching for site by name...\");",
+									"        for (var i = 0; i < jsonData.length; i++) {",
+									"            if (jsonData[i].name == pm.iterationData.get(\"site_template_name\")) {",
+									"                var data = jsonData[i];",
+									"",
+									"                if (data.id) {",
+									"                    pm.collectionVariables.set(\"c_site_template_id\", data.id);",
+									"                    // console.log(\"Setting site template ID to \" + pm.collectionVariables.get(\"c_site_template_id\"));",
+									"                }",
+									"",
+									"                if (data.name) {",
+									"                    pm.collectionVariables.set(\"c_site_template_name\", data.name);",
+									"                    // console.log(\"Setting site template name to \" + pm.collectionVariables.get(\"c_site_template_name\"));",
+									"                }",
+									"",
+									"                if (data.sitegroup_ids) {",
+									"                    pm.collectionVariables.set(\"c_sitegroup_ids\", JSON.stringify(data.sitegroup_ids));",
+									"                    // console.log(\"Site Group IDs: \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
+									"                }",
+									"",
+									"                if (data.rftemplate_id) {",
+									"                    pm.collectionVariables.set(\"c_rftemplate_id\", data.rftemplate_id);",
+									"                    // console.log(\"Setting RF Template ID to \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
+									"                }",
+									"",
+									"                if (data.secpolicy_id) {",
+									"                    pm.collectionVariables.set(\"c_secpolicy_id\", data.secpolicy_id);",
+									"                    // console.log(\"Setting Security Policy ID to \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
+									"                }",
+									"",
+									"                if (data.alarmtemplate_id) {",
+									"                    pm.collectionVariables.set(\"c_alarmtemplate_id\", data.alarmtemplate_id);",
+									"                    // console.log(\"Setting Alarm Template ID to \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
+									"                }",
+									"",
+									"                if (data.networktemplate_id) {",
+									"                    pm.collectionVariables.set(\"c_networktemplate_id\", data.networktemplate_id);",
+									"                    // console.log(\"Setting Network Template ID to \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
+									"                }",
+									"                ",
+									"                foundTemplateSite = true;",
+									"            }",
+									"        }",
+									"    } else {",
+									"        // If both site_template_id and site_template_name are empty, alert user and fail.",
+									"        console.warn(\"Template ID or name not provided.\")",
+									"        foundTemplateSite = false;",
 									"    }",
-									"};",
 									"",
-									"pm.test(\"Verifying template site exists...\", function(){",
-									"    pm.expect(foundTemplateSite).to.eql(true);",
-									"});",
+									"    pm.test(\"Verifying template site exists...\", function(){",
+									"        pm.expect(foundTemplateSite).to.eql(true);",
+									"    });",
 									"",
-									"if (foundTemplateSite == false){",
-									"     nextRequest = null;",
-									"};",
+									"    if (foundTemplateSite == false) {",
+									"        console.info(\"No template found, exiting...\");",
+									"        nextRequest = null;",
+									"    }",
 									"",
-									"console.log(nextRequest);",
-									"postman.setNextRequest(nextRequest);"
+									"    console.info(\"Template site ID:             \" + pm.collectionVariables.get(\"c_site_template_id\"));",
+									"    console.info(\"Template site name:           \" + pm.collectionVariables.get(\"c_site_template_name\"));",
+									"    console.info(\"Template site groups:         \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
+									"    console.info(\"Template RF template ID:      \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
+									"    console.info(\"Template security policy ID:  \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
+									"    console.info(\"Template alarm template ID:   \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
+									"    console.info(\"Template network template ID: \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
+									"",
+									"    // Move to the next request",
+									"    postman.setNextRequest(nextRequest);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure all collection variables are removed before running.",
+									"pm.collectionVariables.unset(\"c_site_id\");",
+									"pm.collectionVariables.unset(\"c_site_template_id\");",
+									"pm.collectionVariables.unset(\"c_site_template_name\");",
+									"pm.collectionVariables.unset(\"c_site_address\");",
+									"pm.collectionVariables.unset(\"c_sitegroup_ids\");",
+									"pm.collectionVariables.unset(\"c_rftemplate_id\");",
+									"pm.collectionVariables.unset(\"c_secpolicy_id\");",
+									"pm.collectionVariables.unset(\"c_alarmtemplate_id\");",
+									"pm.collectionVariables.unset(\"c_networktemplate_id\");",
+									"pm.collectionVariables.unset(\"c_site_template_settings\");",
+									"",
+									"pm.collectionVariables.unset(\"country_code\");",
+									"pm.collectionVariables.unset(\"formatted_address\");",
+									"pm.collectionVariables.unset(\"lat\");",
+									"pm.collectionVariables.unset(\"lng\");",
+									"pm.collectionVariables.unset(\"time_zone\");"
 								],
 								"type": "text/javascript"
 							}
@@ -999,36 +1136,25 @@
 					]
 				},
 				{
-					"name": "cloner_checkDupes",
+					"name": "cloner_getSiteSettingsFromTemplate",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"var nextRequest = \"cloner_googleGeocode\";",
-									"var foundDup = false;",
-									"var jsonData = JSON.parse(responseBody);",
+									"let jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
+									"// Remove unique settings from array",
+									"delete jsonData.id;",
+									"delete jsonData.site_id;",
+									"delete jsonData.org_id;",
+									"delete jsonData.created_time;",
+									"delete jsonData.modified_time;",
 									"",
-									"for (var i = 0; i < jsonData.length; i++) {",
-									"    if (jsonData[i].name == pm.variables.get(\"site_name\")) {",
-									"        console.log(\"Found Duplicate Site\");",
-									"        foundDup = true;",
-									"    }",
-									"};",
+									"// Assign sanitized settings array to collection variable `c_site_template_settings`",
+									"pm.collectionVariables.set(\"c_site_template_settings\", JSON.stringify(jsonData));",
 									"",
-									"pm.test(\"Verifying site does not already exist...\", function(){",
-									"    pm.expect(foundDup).to.eql(false);",
-									"});",
-									"",
-									"if (foundDup == true){",
-									"     nextRequest = null;",
-									"};",
-									"",
-									"console.log(nextRequest);",
 									"postman.setNextRequest(nextRequest);"
 								],
 								"type": "text/javascript"
@@ -1039,7 +1165,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
+							"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
 							"protocol": "https",
 							"host": [
 								"{{host}}"
@@ -1047,14 +1173,14 @@
 							"path": [
 								"api",
 								"v1",
-								"orgs",
-								":org_id",
-								"sites"
+								"sites",
+								":site_id",
+								"setting"
 							],
 							"variable": [
 								{
-									"key": "org_id",
-									"value": "{{org_id}}"
+									"key": "site_id",
+									"value": "{{c_site_template_id}}"
 								}
 							]
 						}
@@ -1091,9 +1217,9 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"var encoded = encodeURIComponent(pm.variables.get(\"site_address\") );",
-									"pm.collectionVariables.set(\"c_site_address\", encoded);",
-									""
+									"// URL encode the site address provided in the CSV file and set to the `c_site_address` variable",
+									"var encoded = encodeURIComponent(pm.iterationData.get(\"site_address\") );",
+									"pm.collectionVariables.set(\"c_site_address\", encoded);"
 								],
 								"type": "text/javascript"
 							}
@@ -1103,27 +1229,17 @@
 							"script": {
 								"exec": [
 									"var nextRequest = \"cloner_googleTimeZone\";",
+									"let jsonData = pm.response.json();",
+									"",
 									"var doNext = false;",
-									"",
-									"var jsonData = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"",
-									"pm.test(\"Results is not empty\", function() {",
-									"  pm.expect(jsonData.results).length >= 1;",
-									"});",
 									"",
 									"pm.collectionVariables.set(\"formatted_address\", jsonData.results[0].formatted_address);",
 									"pm.collectionVariables.set(\"lat\", parseFloat(jsonData.results[0].geometry.location.lat));",
 									"pm.collectionVariables.set(\"lng\", parseFloat(jsonData.results[0].geometry.location.lng));",
 									"",
 									"for (var i = 0; i < jsonData.results[0].address_components.length; i++) {",
-									"    console.log(JSON.stringify(jsonData.results[0].address_components[i].types));",
 									"    if (jsonData.results[0].address_components[i].types.indexOf(\"country\") > -1) {",
 									"        pm.collectionVariables.set(\"country_code\", jsonData.results[0].address_components[i].short_name);",
-									"        console.log(\"Found Country Code\");",
 									"        doNext = true;",
 									"    }",
 									"};",
@@ -1132,7 +1248,10 @@
 									"     nextRequest = null;",
 									"};",
 									"",
-									"console.log(nextRequest);",
+									"console.info(\"Country code: \" + pm.collectionVariables.get(\"country_code\"));",
+									"console.info(\"Address: \" + pm.collectionVariables.get(\"formatted_address\"));",
+									"console.info(\"Lat/lng: \" + pm.collectionVariables.get(\"lat\") + \"/\" + pm.collectionVariables.get(\"lng\"));",
+									"",
 									"postman.setNextRequest(nextRequest);",
 									""
 								],
@@ -1196,20 +1315,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var nextRequest = \"cloner_getSiteDetailsFromTemplate\";",
-									"var jsonData = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
+									"var nextRequest = \"cloner_createOrgSite\";",
+									"let jsonData = pm.response.json();",
 									"",
 									"pm.test(\"TimeZoneID is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"timeZoneId\");",
+									"    pm.expect(jsonData).to.have.property(\"timeZoneId\");",
 									"});",
 									"",
 									"pm.collectionVariables.set(\"time_zone\", jsonData.timeZoneId);",
 									"",
-									"console.log(nextRequest);",
+									"console.info(\"Timezone: \" + pm.collectionVariables.get(\"time_zone\"));",
+									"",
 									"postman.setNextRequest(nextRequest);"
 								],
 								"type": "text/javascript"
@@ -1255,183 +1371,6 @@
 					"response": []
 				},
 				{
-					"name": "cloner_getSiteDetailsFromTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"cloner_createOrgSite\";",
-									"var jsonData = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"",
-									"pm.test(\"Site groups are present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"sitegroup_ids\");",
-									"});",
-									"pm.collectionVariables.set(\"sitegroup_ids\", JSON.stringify(jsonData.sitegroup_ids));",
-									"console.log(\"Site Group IDs: \" + pm.collectionVariables.get(\"sitegroup_ids\"));",
-									"",
-									"pm.test(\"RF template is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"rftemplate_id\");",
-									"});",
-									"pm.collectionVariables.set(\"rftemplate_id\", jsonData.rftemplate_id);",
-									"console.log(\"RF Template ID: \" + jsonData.rftemplate_id);",
-									"",
-									"pm.test(\"Security template is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"secpolicy_id\");",
-									"});",
-									"pm.collectionVariables.set(\"secpolicy_id\", jsonData.secpolicy_id);",
-									"console.log(\"Security Policy ID: \" + jsonData.secpolicy_id);",
-									"",
-									"pm.test(\"Alarm template is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"alarmtemplate_id\");",
-									"});",
-									"pm.collectionVariables.set(\"alarmtemplate_id\", jsonData.alarmtemplate_id);",
-									"console.log(\"Alarm Template ID: \" + jsonData.alarmtemplate_id);",
-									"",
-									"pm.test(\"Network template is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"networktemplate_id\");",
-									"});",
-									"pm.collectionVariables.set(\"networktemplate_id\", jsonData.networktemplate_id);",
-									"console.log(\"Network Template ID: \" + jsonData.networktemplate_id);",
-									"",
-									"console.log(nextRequest);",
-									"postman.setNextRequest(nextRequest);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://{{host}}/api/v1/sites/:site_id",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"sites",
-								":site_id"
-							],
-							"variable": [
-								{
-									"key": "site_id",
-									"value": "{{site_template_id}}"
-								}
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "ok",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "",
-									"variable": [
-										{
-											"key": "orgr_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
-						}
-					]
-				},
-				{
-					"name": "cloner_getSiteSettingsFromTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"cloner_updateSiteSettingsFromTemplate\";",
-									"var jsonData = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"",
-									"delete jsonData.id;",
-									"delete jsonData.site_id;",
-									"delete jsonData.org_id;",
-									"delete jsonData.created_time;",
-									"delete jsonData.modified_time;",
-									"",
-									"pm.collectionVariables.set(\"site_template_settings\", JSON.stringify(jsonData));",
-									"",
-									"console.log(nextRequest)",
-									"postman.setNextRequest(nextRequest);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"sites",
-								":site_id",
-								"setting"
-							],
-							"variable": [
-								{
-									"key": "site_id",
-									"value": "{{site_template_id}}"
-								}
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "ok",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "",
-									"variable": [
-										{
-											"key": "orgr_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
-						}
-					]
-				},
-				{
 					"name": "cloner_createOrgSite",
 					"event": [
 						{
@@ -1447,39 +1386,22 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var nextRequest = \"cloner_getSiteSettingsFromTemplate\";",
-									"var jsonData = JSON.parse(responseBody);",
+									"var nextRequest = \"cloner_updateSiteSettingsFromTemplate\";",
+									"let jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
+									"pm.test(\"New site ID is present\", function() {",
+									"    pm.expect(jsonData).to.have.property(\"id\");",
 									"});",
 									"",
-									"pm.test(\"Site ID  is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"id\");",
-									"  pm.collectionVariables.set(\"c_site_id\", jsonData.id);",
+									"pm.test(\"New site name matches CSV\", function() {",
+									"    pm.expect(jsonData.name).to.equal(pm.iterationData.get(\"site_name\"));",
 									"});",
 									"",
-									"pm.test(\"Name matches CSV\", function() {",
-									"  pm.expect(jsonData.name).to.equal(pm.variables.get(\"site_name\"));",
-									"});",
+									"pm.collectionVariables.set(\"c_site_id\", jsonData.id);",
 									"",
-									"pm.collectionVariables.unset(\"site_address\");",
-									"pm.collectionVariables.unset(\"lat\");",
-									"pm.collectionVariables.unset(\"lng\");",
-									"pm.collectionVariables.unset(\"formatted_address\");",
-									"pm.collectionVariables.unset(\"time_zone\");",
-									"pm.collectionVariables.unset(\"device_id\");",
-									"pm.collectionVariables.unset(\"country_code\");",
+									"console.info(\"Created site: \" + jsonData.name);",
+									"console.info(\"New ID: \" + jsonData.id);",
 									"",
-									"",
-									"pm.collectionVariables.unset(\"sitegroup_ids\");",
-									"pm.collectionVariables.unset(\"rftemplate_id\");",
-									"pm.collectionVariables.unset(\"secpolicy_id\");",
-									"pm.collectionVariables.unset(\"alarmtemplate_id\");",
-									"pm.collectionVariables.unset(\"networktemplate_id\");",
-									"",
-									"",
-									"console.log(nextRequest)",
 									"postman.setNextRequest(nextRequest);"
 								],
 								"type": "text/javascript"
@@ -1498,7 +1420,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"{{site_name}}\",\n    \"timezone\": \"{{time_zone}}\",\n    \"country_code\": \"{{country_code}}\",\n    \"latlng\": { \"lat\": {{lat}}, \"lng\": {{lng}} },\n    \"address\": \"{{formatted_address}}\",\n    \"sitegroup_ids\": {{sitegroup_ids}},\n    \"rftemplate_id\": \"{{rftemplate_id}}\",\n    \"secpolicy_id\": \"{{secpolicy_id}}\",\n    \"alarmtemplate_id\": \"{{alarmtemplate_id}}\",\n    \"networktemplate_id\": \"{{networktemplate_id}}\"\n}",
+							"raw": "{\n    \"name\": \"{{site_name}}\",\n    \"timezone\": \"{{time_zone}}\",\n    \"country_code\": \"{{country_code}}\",\n    \"latlng\": { \"lat\": {{lat}}, \"lng\": {{lng}} },\n    \"address\": \"{{formatted_address}}\",\n    \"sitegroup_ids\": {{c_sitegroup_ids}},\n    \"rftemplate_id\": \"{{c_rftemplate_id}}\",\n    \"secpolicy_id\": \"{{c_secpolicy_id}}\",\n    \"alarmtemplate_id\": \"{{c_alarmtemplate_id}}\",\n    \"networktemplate_id\": \"{{c_networktemplate_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1586,14 +1508,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"",
-									"pm.collectionVariables.unset(\"c_site_id\");",
-									"pm.collectionVariables.unset(\"site_template_settings\");"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -1604,7 +1519,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{{site_template_settings}}",
+							"raw": "{{c_site_template_settings}}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1636,7 +1551,7 @@
 					"response": []
 				}
 			],
-			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.  For this particular collection, it will also adjust the site settings.  any site setting you want to push to each site after creation needs to be added to the \"updateSiteSettings - Generic\" call which will be pushed after the site is created.\n\nThis is intended to only make changes to newly created sites.  If you want all sites including existing sites to have a specific setting, please use the regular site creation collection and then perform the Generic Update Sites collection flow post creation.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
+			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.  For this particular collection, it will also adjust the site settings based on an existing site (site_template_id or site_template_name).\n\nThis is intended to only make changes to newly created sites.  If you want all sites including existing sites to have a specific setting, please use the regular site creation collection and then perform the Generic Update Sites collection flow post creation.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\n- `site_name`\n- `site_address` (Must be a valid street address and enclosed in quotes)\n- `site_template_id` (If this column is empty, `site_template_name` MUST be provided and must match an existing site name)\n- `site_template_name` (If `site_template_id` is provided this value will be ignored)\n\nExample CSV:\n\nsite_name,site_address,site_template_id,site_template_name\n```\nAdonis,\"5592 S. Adonis Pl., Boise, ID 83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,Template Site Name\n```",
 			"auth": {
 				"type": "apikey",
 				"apikey": [
@@ -1667,7 +1582,9 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							""
+							"pm.test(\"Status code is 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
 						]
 					}
 				}
@@ -4454,34 +4371,6 @@
 		},
 		{
 			"key": "desired_ap_version",
-			"value": ""
-		},
-		{
-			"key": "site_template_id",
-			"value": ""
-		},
-		{
-			"key": "site_template_settings",
-			"value": ""
-		},
-		{
-			"key": "sitegroup_ids",
-			"value": ""
-		},
-		{
-			"key": "rftemplate_id",
-			"value": ""
-		},
-		{
-			"key": "secpolicy_id",
-			"value": ""
-		},
-		{
-			"key": "alarmtemplate_id",
-			"value": ""
-		},
-		{
-			"key": "networktemplate_id",
 			"value": ""
 		}
 	]
