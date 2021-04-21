@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "d2027728-9ba8-4098-871b-20173e5302c1",
-		"name": "Mist Runner Collections 0.2.4",
+		"_postman_id": "f8534122-72a7-4d7e-81ca-3b19771a88f3",
+		"name": "Mist Runner Collections 0.3.0",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -10,7 +10,493 @@
 			"name": "Site Creation",
 			"item": [
 				{
-					"name": "googleGeocode",
+					"name": "checkDuplicateSite_sitecreation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(`Starting Site ${pm.iterationData.get(\"site_name\")}`)",
+									"var nextRequest = null",
+									"var foundDup = false",
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"",
+									"",
+									"if (!!pm.iterationData.get(\"sitegroup_ids\")) {",
+									"    pm.collectionVariables.set(\"c_sitegroup_ids\", pm.iterationData.get(\"sitegroup_ids\"));",
+									"    console.info(\"sitegroup_ids set in CSV\");",
+									"}",
+									"",
+									"if (!!pm.iterationData.get(\"rftemplate_id\")) {",
+									"    pm.collectionVariables.set(\"c_rftemplate_id\", pm.iterationData.get(\"rftemplate_id\"));",
+									"    console.info(\"Setting RF Template ID to \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
+									"    };",
+									"",
+									"if (!!pm.iterationData.get(\"secpolicy_id\")) {",
+									"    pm.collectionVariables.set(\"c_secpolicy_id\", pm.iterationData.get(\"secpolicy_id\"));",
+									"    console.info(\"Setting Sec Policy ID to \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
+									"    };",
+									"",
+									"if (!!pm.iterationData.get(\"alarmtemplate_id\")) {",
+									"    pm.collectionVariables.set(\"c_alarmtemplate_id\", pm.iterationData.get(\"alarmtemplate_id\"));",
+									"    console.info(\"Setting Sec Policy ID to \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
+									"    };",
+									"",
+									"if (!!pm.iterationData.get(\"networktemplate_id\")) {",
+									"    pm.collectionVariables.set(\"c_networktemplate_id\", pm.iterationData.get(\"networktemplate_id\"));",
+									"    console.info(\"Setting Sec Policy ID to \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
+									"    };",
+									"",
+									"console.info(`CSV Value: ${pm.iterationData.get(\"site_name\")}`)",
+									"console.info(`Formatted Value: ${pm.collectionVariables.get(\"c_site_name\")}`)",
+									"",
+									"for (var i = 0; i < jsonData.length; i++) {",
+									"    if (jsonData[i].name == pm.variables.get(\"c_site_name\")) {",
+									"        console.log(\"Found Duplicate Site, bailing.\")",
+									"        foundDup = true",
+									"        }",
+									"};",
+									"pm.test(\"Verify site_name does not exist\", function(){",
+									"    pm.expect(foundDup).to.eql(false);",
+									"});",
+									"",
+									"//Test if we need to clone existing site",
+									"if ((!!pm.iterationData.get(\"site_template_name\")) || (!!pm.iterationData.get(\"site_template_id\"))) {",
+									"    console.log(\"found site template name/id\")",
+									"    pm.collectionVariables.set(\"c_clone\", true);",
+									"}",
+									"else {",
+									"    console.log(\"No Template Site/ID found\")",
+									"};",
+									"",
+									"",
+									"//Test if we need to geocode",
+									"if (!!pm.iterationData.get(\"lat\") && !!pm.iterationData.get(\"lng\") && !!pm.iterationData.get(\"time_zone\")) {",
+									"    console.log(\"Geocoded/Timezone values present, Skipping Geocoding\")",
+									"    pm.collectionVariables.set(\"c_lat\", pm.iterationData.get(\"lat\"))",
+									"    pm.collectionVariables.set(\"c_lng\", pm.iterationData.get(\"lng\"));",
+									"    pm.collectionVariables.set(\"c_time_zone\", pm.iterationData.get(\"time_zone\"));",
+									"    pm.collectionVariables.set(\"c_country_code\", pm.iterationData.get(\"country_code\"));",
+									"    // Skip geocoding if lat/long/timezone are present in CSV and formatted address",
+									"    pm.collectionVariables.set(\"formatted_address\", pm.iterationData.get('site_address'));",
+									"    pm.collectionVariables.set(\"c_geocode\", false)",
+									"    nextRequest = \"createOrgSite_sitecreation\";",
+									"}",
+									"else {",
+									"    console.log(\"No lat/lng/time_zone found, geocoding\");",
+									"    pm.collectionVariables.set(\"c_geocode\", true);",
+									"};",
+									"",
+									"// Test if additional settings are specified",
+									"if (pm.iterationData.has(\"custom_settings\") && pm.iterationData.get(\"custom_settings\")){",
+									"    console.log(\"Custom Settings Requested\")",
+									"    pm.collectionVariables.set(\"c_custom_settings\", true);",
+									"};",
+									"",
+									"",
+									"if (foundDup == true){",
+									"     nextRequest = null;",
+									"     console.log(\"Duplicate Site Found, ending iteration\")",
+									"",
+									"}",
+									"else if (pm.collectionVariables.get(\"c_clone\") == true) {",
+									"    console.log(\"Template Site ID/Name Found, cloning Site Settings\")",
+									"    nextRequest = \"getTemplateSite_sitecreation\";",
+									"}",
+									"else if (pm.collectionVariables.get(\"c_geocode\") == true){",
+									"    console.log(\"Missing Lat/Lng/Timezone, geocoding\")",
+									"    nextRequest = \"googleGeocode_sitecreation\";",
+									"}",
+									"else {",
+									"    console.log(\"Moving to Create Site\")",
+									"}",
+									"",
+									"console.log(`setting next request ${nextRequest}`);",
+									"postman.setNextRequest(nextRequest);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure all collection variables are removed before running.",
+									"pm.collectionVariables.unset(\"c_site_id\");",
+									"pm.collectionVariables.unset(\"c_lat\");",
+									"pm.collectionVariables.unset(\"c_lng\");",
+									"pm.collectionVariables.unset(\"c_time_zone\")",
+									"",
+									"pm.collectionVariables.unset(\"c_site_name\");",
+									"pm.collectionVariables.unset(\"c_site_template_id\");",
+									"pm.collectionVariables.unset(\"c_site_template_name\");",
+									"pm.collectionVariables.unset(\"c_site_address\");",
+									"pm.collectionVariables.set(\"c_sitegroup_ids\", null);",
+									"pm.collectionVariables.set(\"c_rftemplate_id\", \"\");",
+									"pm.collectionVariables.set(\"c_secpolicy_id\", \"\");",
+									"pm.collectionVariables.set(\"c_alarmtemplate_id\", \"\");",
+									"pm.collectionVariables.set(\"c_networktemplate_id\", \"\");",
+									"pm.collectionVariables.unset(\"c_site_template_settings\");",
+									"pm.collectionVariables.unset(\"c_geocode\")",
+									"pm.collectionVariables.set(\"c_clone\", false)",
+									"pm.collectionVariables.unset(\"country_code\");",
+									"pm.collectionVariables.unset(\"formatted_address\");",
+									"pm.collectionVariables.unset(\"lat\");",
+									"pm.collectionVariables.unset(\"lng\");",
+									"pm.collectionVariables.unset(\"time_zone\");",
+									"",
+									"//Handling of digit only sites with quotes.",
+									"var formatted_string = pm.iterationData.get(\"site_name\")",
+									"if (formatted_string.includes(\"\\'\") || formatted_string.includes(\"\\\"\")) {",
+									"    console.info(\"stripping formatting of site_name\")",
+									"    formatted_string = formatted_string.replace(/'/g, \"\");",
+									"    formatted_string = formatted_string.replace(/\"/g, \"\");",
+									"    console.log(`Formatted Name ${formatted_string}`);",
+									"    pm.collectionVariables.set(\"c_site_name\", formatted_string)",
+									"}",
+									"else {",
+									"    pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":orgr_id",
+								"sites"
+							],
+							"variable": [
+								{
+									"key": "orgr_id",
+									"value": "{{org_id}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "ok",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "",
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "getTemplateSite_sitecreation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var nextRequest = \"getSiteSettingsFromTemplate_sitecreation\";",
+									"let jsonData = pm.response.json();",
+									"",
+									"var foundTemplateSite = false;",
+									"",
+									"// Get template site details",
+									"if (!!pm.iterationData.get(\"site_template_id\")) {",
+									"    // Check for site_template_id variable and lookup template site",
+									"    console.info(\"Searching for site by ID...\");    ",
+									"    for (var i = 0; i < jsonData.length; i++) {",
+									"        if (jsonData[i].id == pm.iterationData.get(\"site_template_id\")) {",
+									"            var data = jsonData[i];",
+									"",
+									"            if (data.id) {",
+									"                pm.collectionVariables.set(\"c_site_template_id\", data.id);",
+									"                // console.log(\"Setting site template ID to \" + pm.collectionVariables.get(\"c_site_template_id\"));",
+									"            }",
+									"",
+									"            if (data.name) {",
+									"                pm.collectionVariables.set(\"c_site_template_name\", data.name);",
+									"                // console.log(\"Setting site template name to \" + pm.collectionVariables.get(\"c_site_template_name\"));",
+									"            }",
+									"",
+									"            if (data.sitegroup_ids && !iterationData.has(\"sitegroup_ids\")) {pm",
+									"                pm.collectionVariables.set(\"c_sitegroup_ids\", JSON.stringify(data.sitegroup_ids));",
+									"                 console.log(\"Site Group IDs: \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
+									"            }",
+									"            else if (iterationData.has(\"sitegroup_ids\"))",
+									"            {",
+									"                pm.collectionVariables.set(\"c_sitegroup_ids\", iterationData.get(\"sitegroup_ids\"));",
+									"                console.log(\"sitegroup_ids set in CSV\");",
+									"            }",
+									"",
+									"            if (data.rftemplate_id) {",
+									"                pm.collectionVariables.set(\"c_rftemplate_id\", data.rftemplate_id);",
+									"                // console.log(\"Setting RF Template ID to \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
+									"            }",
+									"",
+									"            if (data.secpolicy_id) {",
+									"                pm.collectionVariables.set(\"c_secpolicy_id\", data.secpolicy_id);",
+									"                // console.log(\"Setting Security Policy ID to \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
+									"            }",
+									"",
+									"            if (data.alarmtemplate_id) {",
+									"                pm.collectionVariables.set(\"c_alarmtemplate_id\", data.alarmtemplate_id);",
+									"                // console.log(\"Setting Alarm Template ID to \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
+									"            }",
+									"",
+									"            if (data.networktemplate_id) {",
+									"                pm.collectionVariables.set(\"c_networktemplate_id\", data.networktemplate_id);",
+									"                // console.log(\"Setting Network Template ID to \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
+									"            }",
+									"",
+									"            foundTemplateSite = true;",
+									"        }",
+									"    }",
+									"}",
+									"else if (((pm.iterationData.get(\"site_template_id\") == \"\") || (pm.iterationData.get(\"site_template_id\") == null)) && ((pm.iterationData.get(\"site_template_name\") != \"\") || (pm.iterationData.get(\"site_template_name\") != null))) {",
+									"    // If site_template_id is not set, use site_template_name to lookup template site",
+									"    console.info(\"Searching for site by name...\");",
+									"    for (var i = 0; i < jsonData.length; i++) {",
+									"        if (jsonData[i].name == pm.iterationData.get(\"site_template_name\")) {",
+									"            var data = jsonData[i];",
+									"",
+									"            if (data.id) {",
+									"                pm.collectionVariables.set(\"c_site_template_id\", data.id);",
+									"                // console.log(\"Setting site template ID to \" + pm.collectionVariables.get(\"c_site_template_id\"));",
+									"            }",
+									"",
+									"            if (data.name) {",
+									"                pm.collectionVariables.set(\"c_site_template_name\", data.name);",
+									"                // console.log(\"Setting site template name to \" + pm.collectionVariables.get(\"c_site_template_name\"));",
+									"            }",
+									"",
+									"            if (data.sitegroup_ids) {",
+									"                pm.collectionVariables.set(\"c_sitegroup_ids\", JSON.stringify(data.sitegroup_ids));",
+									"                // console.log(\"Site Group IDs: \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
+									"            }",
+									"",
+									"            if (data.rftemplate_id) {",
+									"                pm.collectionVariables.set(\"c_rftemplate_id\", data.rftemplate_id);",
+									"                // console.log(\"Setting RF Template ID to \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
+									"            }",
+									"",
+									"            if (data.secpolicy_id) {",
+									"                pm.collectionVariables.set(\"c_secpolicy_id\", data.secpolicy_id);",
+									"                // console.log(\"Setting Security Policy ID to \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
+									"            }",
+									"",
+									"            if (data.alarmtemplate_id) {",
+									"                pm.collectionVariables.set(\"c_alarmtemplate_id\", data.alarmtemplate_id);",
+									"                // console.log(\"Setting Alarm Template ID to \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
+									"            }",
+									"",
+									"            if (data.networktemplate_id) {",
+									"                pm.collectionVariables.set(\"c_networktemplate_id\", data.networktemplate_id);",
+									"                // console.log(\"Setting Network Template ID to \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
+									"            }",
+									"            ",
+									"            foundTemplateSite = true;",
+									"        }",
+									"    }",
+									"} else {",
+									"    // If both site_template_id and site_template_name are empty, alert user and fail.",
+									"    console.warn(\"Template ID or name not provided.\")",
+									"    foundTemplateSite = false;",
+									"}",
+									"",
+									"pm.test(\"Verifying template site exists...\", function(){",
+									"    pm.expect(foundTemplateSite).to.eql(true);",
+									"});",
+									"",
+									"if (foundTemplateSite == false) {",
+									"    console.info(\"No template found, exiting...\");",
+									"    nextRequest = null;",
+									"}",
+									"",
+									"console.info(\"Template site ID:             \" + pm.collectionVariables.get(\"c_site_template_id\"));",
+									"console.info(\"Template site name:           \" + pm.collectionVariables.get(\"c_site_template_name\"));",
+									"console.info(\"Template site groups:         \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
+									"console.info(\"Template RF template ID:      \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
+									"console.info(\"Template security policy ID:  \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
+									"console.info(\"Template alarm template ID:   \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
+									"console.info(\"Template network template ID: \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
+									"",
+									"// Move to the next request",
+									"console.log(`setting next request ${nextRequest}`);",
+									"postman.setNextRequest(nextRequest);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orgs",
+								":org_id",
+								"sites"
+							],
+							"variable": [
+								{
+									"key": "org_id",
+									"value": "{{org_id}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "ok",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "",
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "getSiteSettingsFromTemplate_sitecreation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var nextRequest = \"googleGeocode_sitecreation\";",
+									"let jsonData = pm.response.json();",
+									"",
+									"// Remove unique settings from array",
+									"delete jsonData.id;",
+									"delete jsonData.site_id;",
+									"delete jsonData.org_id;",
+									"delete jsonData.created_time;",
+									"delete jsonData.modified_time;",
+									"",
+									"// Assign sanitized settings array to collection variable `c_site_template_settings`",
+									"pm.collectionVariables.set(\"c_site_template_settings\", JSON.stringify(jsonData));",
+									"",
+									"console.log(`setting next request ${nextRequest}`);",
+									"postman.setNextRequest(nextRequest);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
+							"protocol": "https",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"sites",
+								":site_id",
+								"setting"
+							],
+							"variable": [
+								{
+									"key": "site_id",
+									"value": "{{c_site_template_id}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "ok",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "",
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "googleGeocode_sitecreation",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -34,14 +520,25 @@
 									"pm.test(\"Results is not empty\", function() {",
 									"  pm.expect(jsonData.results).length >= 1;",
 									"});",
+									"",
+									"",
+									"",
 									"pm.collectionVariables.set(\"formatted_address\", jsonData.results[0].formatted_address)",
-									"pm.collectionVariables.set(\"lat\", parseFloat(jsonData.results[0].geometry.location.lat))",
-									"pm.collectionVariables.set(\"lng\", parseFloat(jsonData.results[0].geometry.location.lng))",
+									"pm.collectionVariables.set(\"c_location\", `${parseFloat(jsonData.results[0].geometry.location.lat)},${parseFloat(jsonData.results[0].geometry.location.lng)}`)",
+									"pm.collectionVariables.set(\"c_lat\", parseFloat(jsonData.results[0].geometry.location.lat))",
+									"pm.collectionVariables.set(\"c_lng\", parseFloat(jsonData.results[0].geometry.location.lng))",
+									"",
+									"console.log(`location: ${pm.collectionVariables.get('c_location')}`);",
+									"",
+									"console.log(`lat: ${pm.collectionVariables.get('lat')}`);",
+									"console.log(`lng: ${pm.collectionVariables.get('lng')}`);",
+									"console.log(`lng: ${pm.collectionVariables.get('formatted_address')}`);",
 									"for (var i = 0; i < jsonData.results[0].address_components.length; i++) {",
-									"    console.log(JSON.stringify(jsonData.results[0].address_components[i].types))",
+									"    //console.log(JSON.stringify(jsonData.results[0].address_components[i].types))",
 									"    if (jsonData.results[0].address_components[i].types.indexOf(\"country\") > -1) {",
-									"        pm.collectionVariables.set(\"country_code\", jsonData.results[0].address_components[i].short_name)",
-									"        console.log(\"Found Country Code\")",
+									"        pm.collectionVariables.set(\"c_country_code\", jsonData.results[0].address_components[i].short_name)",
+									"        console.log(`CountryCode: ${jsonData.results[0].address_components[i].short_name}`)",
+									"        //console.log(\"Found Country Code\")",
 									"        }",
 									"};",
 									"",
@@ -101,21 +598,35 @@
 					"response": []
 				},
 				{
-					"name": "googleTimeZone",
+					"name": "gootleTimezone_sitecreation",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
+									"var nextRequest = \"createOrgSite_sitecreation\";",
+									"let jsonData = pm.response.json();",
+									"",
 									"pm.test(\"TimeZoneID is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"timeZoneId\");",
+									"    pm.expect(jsonData).to.have.property(\"timeZoneId\");",
 									"});",
-									"pm.collectionVariables.set(\"time_zone\", jsonData.timeZoneId)",
-									""
+									"",
+									"pm.collectionVariables.set(\"c_time_zone\", jsonData.timeZoneId);",
+									"",
+									"console.info(\"Timezone: \" + pm.collectionVariables.get(\"c_time_zone\"));",
+									"",
+									"postman.setNextRequest(nextRequest);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"console.log(`lat: ${pm.collectionVariables.get('lat')}`);",
+									"console.log(`lng: ${pm.collectionVariables.get('lng')}`);",
+									"console.log(`lng: ${pm.collectionVariables.get('formatted_address')}`);"
 								],
 								"type": "text/javascript"
 							}
@@ -128,7 +639,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://maps.googleapis.com/maps/api/timezone/json?location={{lat}},{{lng}}&timestamp={{$timestamp}}&key={{google_api_key}}",
+							"raw": "https://maps.googleapis.com/maps/api/timezone/json?location={{c_location}}&timestamp={{$timestamp}}&key={{google_api_key}}",
 							"protocol": "https",
 							"host": [
 								"maps",
@@ -144,7 +655,7 @@
 							"query": [
 								{
 									"key": "location",
-									"value": "{{lat}},{{lng}}"
+									"value": "{{c_location}}"
 								},
 								{
 									"key": "timestamp",
@@ -160,88 +671,7 @@
 					"response": []
 				},
 				{
-					"name": "getOrgSites_CheckDuplicate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"createOrgSite\"",
-									"var foundDup = false",
-									"var jsonData = JSON.parse(responseBody);",
-									"for (var i = 0; i < jsonData.length; i++) {",
-									"    if (jsonData[i].name == pm.variables.get(\"site_name\")) {",
-									"        console.log(\"Found Duplicate Site\")",
-									"        foundDup = true",
-									"        }",
-									"};",
-									"",
-									"pm.test(\"Verify site_name does not exist\", function(){",
-									"    pm.expect(foundDup).to.eql(false);",
-									"});",
-									"if (foundDup == true){",
-									"     nextRequest = null",
-									"};",
-									"",
-									"",
-									"console.log(nextRequest)",
-									"postman.setNextRequest(nextRequest);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":orgr_id",
-								"sites"
-							],
-							"variable": [
-								{
-									"key": "orgr_id",
-									"value": "{{org_id}}"
-								}
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "ok",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "",
-									"variable": [
-										{
-											"key": "orgr_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
-						}
-					]
-				},
-				{
-					"name": "createOrgSite",
+					"name": "createOrgSite_sitecreation",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -256,24 +686,26 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"pm.test(\"Site ID  is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"id\");",
-									"});",
-									"pm.test(\"Name matches CSV\", function() {",
-									"  pm.expect(jsonData.name).to.equal(pm.variables.get(\"site_name\"));",
+									"var nextRequest = \"updateSiteSettings_sitecreation\";",
+									"let jsonData = pm.response.json();",
+									"",
+									"pm.test(\"New site ID is present\", function() {",
+									"    pm.expect(jsonData).to.have.property(\"id\");",
 									"});",
 									"",
-									"pm.collectionVariables.unset(\"site_address\")",
-									"pm.collectionVariables.unset(\"lat\")",
-									"pm.collectionVariables.unset(\"lng\")",
-									"pm.collectionVariables.unset(\"formatted_address\")",
-									"pm.collectionVariables.unset(\"time_zone\")",
-									"pm.collectionVariables.unset(\"device_id\")",
-									"pm.collectionVariables.unset(\"country_code\")"
+									"pm.test(\"New site name matches CSV\", function() {",
+									"    pm.expect(jsonData.name).to.equal(pm.collectionVariables.get(\"c_site_name\"));",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"c_site_id\", jsonData.id);",
+									"",
+									"console.info(\"Created site: \" + jsonData.name);",
+									"console.info(\"New ID: \" + jsonData.id);",
+									"if (!!pm.collectionVariables.get(\"c_clone\")) {",
+									"    nextRequest = \"updateSiteCloning_sitecreation\"",
+									"}",
+									"",
+									"postman.setNextRequest(nextRequest);"
 								],
 								"type": "text/javascript"
 							}
@@ -287,20 +719,11 @@
 						}
 					},
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"type": "text",
-								"value": "Token {{apitoken}}"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"{{site_name}}\",\n    \"timezone\": \"{{time_zone}}\",\n    \"country_code\": \"{{country_code}}\",\n    \"rftemplate_id\": \"{{rf_template_id}}\",\n    \"latlng\": { \"lat\": {{lat}}, \"lng\": {{lng}} },\n    \"address\": \"{{formatted_address}}\"\n}",
+							"raw": "{\n    \"name\": \"{{c_site_name}}\",\n    \"timezone\": \"{{c_time_zone}}\",\n    \"country_code\": \"{{c_country_code}}\",\n    \"latlng\": {\n        \"lat\": \"{{c_lat}}\",\n        \"lng\": \"{{c_lng}}\"\n    },\n    \"address\": \"{{formatted_address}}\",\n    \"sitegroup_ids\": {{c_sitegroup_ids}},\n    \"rftemplate_id\": \"{{c_rftemplate_id}}\",\n    \"secpolicy_id\": \"{{c_secpolicy_id}}\",\n    \"alarmtemplate_id\": \"{{c_alarmtemplate_id}}\",\n    \"networktemplate_id\": \"{{c_networktemplate_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -323,421 +746,8 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}"
-								}
-							]
-						},
-						"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nname|string|Required. The name of the site\ntimezone|string|Timezone the site is at\ncountry_code|string|country code for the site (for AP config generation), in two-character\nlatlng|latlng|site location\naddress|string|full address of the site\nlat|float|latitude\nlng|float|longitude\nsitegroup_ids|list|sitegroups this site belongs to\nrftemplate_id|string|RF Template ID, this takes precedence over Site Settings\nsecpolicy_id|string|SecPolicy ID\nalarmtemplate_id|string|Alarm Template ID, this takes precedence over the Org-level alarmtemplate_id"
-					},
-					"response": [
-						{
-							"name": "OK",
-							"originalRequest": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n    \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n    \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n\n    \"latlng\": { \"lat\": 37.295833, \"lng\": -122.032946 },\n    \"sitegroup_ids\": [ \"581328b6-e382-f54e-c9dc-999983183a34\", \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\" ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
-									"protocol": "https",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"orgs",
-										":org_id",
-										"sites"
-									],
-									"variable": [
-										{
-											"key": "org_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "{\n    \"id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"latlng\": {\n        \"lat\": 37.295833,\n        \"lng\": -122.032946\n    },\n    \"sitegroup_ids\": [\n        \"581328b6-e382-f54e-c9dc-999983183a34\",\n        \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n    ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}"
-						}
-					]
-				}
-			],
-			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
-			"auth": {
-				"type": "apikey",
-				"apikey": [
-					{
-						"key": "value",
-						"value": "Token {{apitoken}}",
-						"type": "string"
-					},
-					{
-						"key": "key",
-						"value": "Authorization",
-						"type": "string"
-					}
-				]
-			},
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				}
-			]
-		},
-		{
-			"name": "Site Creation with Settings",
-			"item": [
-				{
-					"name": "googleGeocode",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"var encoded = encodeURIComponent(pm.variables.get(\"site_address\") );",
-									"pm.collectionVariables.set(\"c_site_address\", encoded);",
-									""
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"pm.test(\"Results is not empty\", function() {",
-									"  pm.expect(jsonData.results).length >= 1;",
-									"});",
-									"pm.collectionVariables.set(\"formatted_address\", jsonData.results[0].formatted_address)",
-									"pm.collectionVariables.set(\"lat\", parseFloat(jsonData.results[0].geometry.location.lat))",
-									"pm.collectionVariables.set(\"lng\", parseFloat(jsonData.results[0].geometry.location.lng))",
-									"for (var i = 0; i < jsonData.results[0].address_components.length; i++) {",
-									"    console.log(JSON.stringify(jsonData.results[0].address_components[i].types))",
-									"    if (jsonData.results[0].address_components[i].types.indexOf(\"country\") > -1) {",
-									"        pm.collectionVariables.set(\"country_code\", jsonData.results[0].address_components[i].short_name)",
-									"        console.log(\"Found Country Code\")",
-									"        }",
-									"};",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"connection": true,
-							"accept-encoding": true,
-							"accept": true,
-							"user-agent": true,
-							"host": true
-						}
-					},
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "https://maps.googleapis.com/maps/api/geocode/json?address={{c_site_address}}&key={{google_api_key}}",
-							"protocol": "https",
-							"host": [
-								"maps",
-								"googleapis",
-								"com"
-							],
-							"path": [
-								"maps",
-								"api",
-								"geocode",
-								"json"
-							],
-							"query": [
-								{
-									"key": "address",
-									"value": "{{c_site_address}}"
-								},
-								{
-									"key": "key",
-									"value": "{{google_api_key}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "googleTimeZone",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"pm.test(\"TimeZoneID is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"timeZoneId\");",
-									"});",
-									"pm.collectionVariables.set(\"time_zone\", jsonData.timeZoneId)",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://maps.googleapis.com/maps/api/timezone/json?location={{lat}},{{lng}}&timestamp={{$timestamp}}&key={{google_api_key}}",
-							"protocol": "https",
-							"host": [
-								"maps",
-								"googleapis",
-								"com"
-							],
-							"path": [
-								"maps",
-								"api",
-								"timezone",
-								"json"
-							],
-							"query": [
-								{
-									"key": "location",
-									"value": "{{lat}},{{lng}}"
-								},
-								{
-									"key": "timestamp",
-									"value": "{{$timestamp}}"
-								},
-								{
-									"key": "key",
-									"value": "{{google_api_key}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getOrgSites_CheckDuplicate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"createOrgSite\"",
-									"var foundDup = false",
-									"var jsonData = JSON.parse(responseBody);",
-									"for (var i = 0; i < jsonData.length; i++) {",
-									"    if (jsonData[i].name == pm.variables.get(\"site_name\")) {",
-									"        console.log(\"Found Duplicate Site\")",
-									"        foundDup = true",
-									"        }",
-									"};",
-									"",
-									"pm.test(\"Verify site_name does not exist\", function(){",
-									"    pm.expect(foundDup).to.eql(false);",
-									"});",
-									"if (foundDup == true){",
-									"     nextRequest = null",
-									"};",
-									"",
-									"",
-									"console.log(nextRequest)",
-									"postman.setNextRequest(nextRequest);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":orgr_id",
-								"sites"
-							],
-							"variable": [
-								{
-									"key": "orgr_id",
-									"value": "{{org_id}}"
-								}
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "ok",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "",
-									"variable": [
-										{
-											"key": "orgr_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
-						}
-					]
-				},
-				{
-					"name": "createOrgSite",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"pm.test(\"Site ID  is present\", function() {",
-									"  pm.expect(jsonData).to.have.property(\"id\");",
-									"  pm.collectionVariables.set(\"c_site_id\", jsonData.id)",
-									"});",
-									"pm.test(\"Name matches CSV\", function() {",
-									"  pm.expect(jsonData.name).to.equal(pm.variables.get(\"site_name\"));",
-									"});",
-									"",
-									"pm.collectionVariables.unset(\"site_address\")",
-									"pm.collectionVariables.unset(\"lat\")",
-									"pm.collectionVariables.unset(\"lng\")",
-									"pm.collectionVariables.unset(\"formatted_address\")",
-									"pm.collectionVariables.unset(\"time_zone\")",
-									"pm.collectionVariables.unset(\"device_id\")",
-									"pm.collectionVariables.unset(\"country_code\")"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"accept-encoding": true,
-							"connection": true,
-							"user-agent": true
-						}
-					},
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"type": "text",
-								"value": "Token {{apitoken}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"{{site_name}}\",\n    \"timezone\": \"{{time_zone}}\",\n    \"country_code\": \"{{country_code}}\",\n    \"rftemplate_id\": \"{{rf_template_id}}\",\n    \"latlng\": { \"lat\": {{lat}}, \"lng\": {{lng}} },\n    \"address\": \"{{formatted_address}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":org_id",
-								"sites"
-							],
-							"variable": [
-								{
-									"key": "org_id",
-									"value": "{{org_id}}"
+									"value": "{{org_id}}",
+									"type": "string"
 								}
 							]
 						},
@@ -796,7 +806,7 @@
 					]
 				},
 				{
-					"name": "updateSiteSettings - Generic",
+					"name": "updateSiteSettings_sitecreation",
 					"event": [
 						{
 							"listen": "test",
@@ -806,7 +816,10 @@
 									"pm.test(\"Status code is 200\", function() {",
 									"  pm.expect(pm.response.code).to.equal(200);",
 									"});",
-									"pm.collectionVariables.unset(\"c_site_id\")"
+									"pm.collectionVariables.unset(\"c_site_id\")",
+									"",
+									"var nextRequest = null",
+									"postman.setNextRequest(nextRequest);"
 								],
 								"type": "text/javascript"
 							}
@@ -856,653 +869,17 @@
 							"variable": [
 								{
 									"key": "site_id",
-									"value": "{{c_site_id}}"
+									"value": "{{c_site_id}}",
+									"type": "string"
 								}
 							]
 						},
 						"description": " #### Body Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n analytic.enabled|boolean|enable Advanced Analytic feature, default is false (using SUB-ANA license)\r\n app_waking|boolean|default is false\r\n auto_upgrade|object|auto upgrade\r\n bandwidth|int|channel width for the band, 20 / 40 / 80, 80 is only applicable for band_5\r\n ble_config|object|BLE config (see Site:BLE Config)\r\n ble|object|BLE asset settings\r\n brightness|int|0-255, default is 255\r\n channel|int|(primary) channel for the band, 0 means auto\r\n channels|list|list of channels, null or empty array means auto\r\n device_updown_threshold|int|sending AP_DISCONNECTED event in device-updowns only if AP_CONNECTED is not seen within the threshold, in minutes, 0 - 30, default is 0\r\n flags|list|name/val pair objects for location engine to use\r\n hello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\n hello_retries|int|between 2 and 30, default is 7\r\n led.enabled|boolean|whether to enable LED, default is true\r\n led|object|LED control\r\n model_specific|object|overwrites for a specific model. If a band is specified, it will shadow the default.\r\n mxtunnel.mtu|int|552-1500, default is 0\r\n ntp_servers|list|list of NTP servers\r\n persist_config_on_device|boolean|whether to store the config on AP, default is false\r\n power_max|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power_min|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power|int|tx power of the radio, 0 mean auto\r\n preamble|string|short / long / auto, default is short\r\n proxy|object|Proxy Configuration for APs to talk to Mist\r\n radio_config|object|site RF settings\r\n remote_syslog|object|syslog parameters\r\n report_gatt|boolean|default is false; whether AP should periodically connect to BLE devices and report GATT device info (device name, manufacturer name, serial number, battery %, temperature, humidity)\r\n rogue|object|rogue detection parameters\r\n rtsa|object|managed mobility\r\n ssh_keys|list|when limit_ssh_access = true in Org Setting, list of SSH public keys provided by Mist Support to install onto APs (see Org:Setting)\r\n track_anonymous_devices|boolean|default is false; whether to track anonymous BLE assets (requires ‘track_asset’ enabled)\r\n track_asset|boolean|enable Asset Tracking, default is false (using SUB-AST license)\r\n vars|object|a dictionary of name->value, the vars can then be used in Wlans\r\n wifi|object|managed connectivity\r\n\r\n #### Wi-Fi Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|enable WIFI feature, default is true (using SUB-MAN license)\r\n enable_arp_spoof_check|boolean|when proxy_arp is enabled, check for arp spoofing. default is false\r\n enable_channel_144|boolean|whether to enable channel 144 (some older clients may not support in US), default is false\r\n enable_vna|boolean|enable Virtual Network Assistant, default is false (using SUB-VNA license)\r\n proxy_arp|string|default / enabled / disabled\r\n locate_unconnected|boolean|whether to locate unconnected clients, default is false\r\n mesh_enabled|boolean|whether to enable Mesh feature for the site, default is false\r\n disable_11k|boolean|whether to disable 11k, default is false\r\n \r\n #### Remote Syslog Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not remote syslog is enabled\r\n servers|list|list of syslog servers\r\n host|string|host to which syslog is sent\r\n protocol|string|udp / tcp, protocol to use for remote syslog, default is udp\r\n port|int|port on which to connect to host for syslog, default is 514 if protocol=udp, 6514 if protocol=tcp\r\n facility|string|kern / user / mail / daemon / auth / syslog / lpr / news / uucp / cron / authpriv / ftp / ntp / security / console / solaris-cron / local0 - local7, default is config\r\n severity|string|emerg / alert / crit / err / warning / notice / info / debug, default is info\r\n tag|string|optional, tag to attach to log record\r\n \r\n #### Rogue Detection Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not rogue detection is enabled\r\n honeypot_enabled|boolean|whether or not honeypot detection is enabled\r\n min_rssi|int|minimum RSSI for an AP to be considered rogue (ignoring APs that’s far away), default is -80. Minimum allowed value is -85.\r\n min_duration|int|minimum duration for a bssid to be considered rogue, maximum is 59, default is 10\r\n whitelisted_ssids|list|list of SSIDs to whitelist\r\n whitelisted_bssids|list|list of BSSIDs to whitelist\r\n \r\n #### Auto Upgrade Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether auto upgrade should happen, default is false (Note that Mist may auto-upgrade if the version is not supported)\r\n version|string|desired version, beta / stable / custom, default is stable\r\n time_of_day|string|any / HH:MM (24-hour format), upgrade will happen within up to 1-hour from this time\r\n day_of_week|string|any / mon / tue / wed / thu / fri / sat / sun\r\n custom_versions|object|custome versions for different models\r\n\r\n #### Engagement Parameter\r\n NOTE: if hours does not exist, it’s treated as everyday of the week, 00:00-23:59. Currently we don’t allow multiple ranges for the same day\r\n\r\nNOTE: default values for dwell_tags: passerby (1,300) bounce (301, 14400) engaged (14401, 28800) stationed (28801, 42000)\r\n\r\nNOTE: default values for dwell_tag_names: passerby = “Passerby”, bounce = “Visitor”, engaged = “Associates”, stationed = “Assets”\r\n\r\n\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n dwell_tags|object|add tags to visits within the duration (in seconds), available tags (passerby, bounce, engaged, stationed)\r\n max_dwell|int|max time, default is 43200(12h), max is 68400 (18h)\r\n min_dwell|int|min time, default is 0.\r\n hours|object|hours of operation filter, the available days (mon, tue, wed, thu, fri, sat, sun). Note: If the dow is not defined then it’s treated as 00:00-23:59.\r\n \r\n #### WIDS Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n threshold|int|count of events to trigger\r\nduration|int|window where a trigger will be detected and action to be taken (in seconds)\r\n\r\n #### Tunnel Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n hosts|list|hostnames or IPs where a Mist Tunnel will use as the Peer (i.e. they are reachable from AP)\r\nap_subnets|list|list of subnets where we allow AP to establish Mist Tunnels from\r\nprotocol|list|udp / ip, default is udp\r\nvlan_ids|list|list of vlan_ids that will be used\r\nhello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\nhello_retries|int|between 2 and 30, default is 7"
 					},
 					"response": []
-				}
-			],
-			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.  For this particular collection, it will also adjust the site settings.  any site setting you want to push to each site after creation needs to be added to the \"updateSiteSettings - Generic\" call which will be pushed after the site is created.\n\nThis is intended to only make changes to newly created sites.  If you want all sites including existing sites to have a specific setting, please use the regular site creation collection and then perform the Generic Update Sites collection flow post creation.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
-			"auth": {
-				"type": "apikey",
-				"apikey": [
-					{
-						"key": "value",
-						"value": "Token {{apitoken}}",
-						"type": "string"
-					},
-					{
-						"key": "key",
-						"value": "Authorization",
-						"type": "string"
-					}
-				]
-			},
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
 				},
 				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							""
-						]
-					}
-				}
-			]
-		},
-		{
-			"name": "Site Clone/Creation",
-			"item": [
-				{
-					"name": "cloner_getTemplateSite",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"cloner_getSiteSettingsFromTemplate\";",
-									"let jsonData = pm.response.json();",
-									"",
-									"var foundDuplicateSite = false;",
-									"var foundTemplateSite = false;",
-									"",
-									"// Check for duplicate site name in organizatiom",
-									"pm.test(\"Site name is unique\", () => {",
-									"    _.each(jsonData, (site) => {",
-									"        if (site.name == pm.iterationData.get(\"site_name\")) {",
-									"            foundDuplicateSite = true;",
-									"        }",
-									"        pm.expect(foundDuplicateSite, \"Duplicate site '\" + site.name + \"' exists: \" + site.id).to.be.false;",
-									"    });",
-									"});",
-									"",
-									"if (foundDuplicateSite) {",
-									"    console.warn(\"Duplicate site name found in organization, skipping '\" + pm.iterationData.get(\"site_name\") + \"'\");",
-									"    // Exit the runner iteration",
-									"    postman.setNextRequest(null);",
-									"} else {",
-									"    // Get template site details",
-									"    if ((pm.iterationData.get(\"site_template_id\") != \"\") && (pm.iterationData.get(\"site_template_id\") != null)) {",
-									"        // Check for site_template_id variable and lookup template site",
-									"        console.info(\"Searching for site by ID...\");",
-									"        for (var i = 0; i < jsonData.length; i++) {",
-									"            if (jsonData[i].id == pm.iterationData.get(\"site_template_id\")) {",
-									"                var data = jsonData[i];",
-									"",
-									"                if (data.id) {",
-									"                    pm.collectionVariables.set(\"c_site_template_id\", data.id);",
-									"                    // console.log(\"Setting site template ID to \" + pm.collectionVariables.get(\"c_site_template_id\"));",
-									"                }",
-									"",
-									"                if (data.name) {",
-									"                    pm.collectionVariables.set(\"c_site_template_name\", data.name);",
-									"                    // console.log(\"Setting site template name to \" + pm.collectionVariables.get(\"c_site_template_name\"));",
-									"                }",
-									"",
-									"                if (data.sitegroup_ids) {pm",
-									"                    pm.collectionVariables.set(\"c_sitegroup_ids\", JSON.stringify(data.sitegroup_ids));",
-									"                    // console.log(\"Site Group IDs: \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
-									"                }",
-									"",
-									"                if (data.rftemplate_id) {",
-									"                    pm.collectionVariables.set(\"c_rftemplate_id\", data.rftemplate_id);",
-									"                    // console.log(\"Setting RF Template ID to \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
-									"                }",
-									"",
-									"                if (data.secpolicy_id) {",
-									"                    pm.collectionVariables.set(\"c_secpolicy_id\", data.secpolicy_id);",
-									"                    // console.log(\"Setting Security Policy ID to \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
-									"                }",
-									"",
-									"                if (data.alarmtemplate_id) {",
-									"                    pm.collectionVariables.set(\"c_alarmtemplate_id\", data.alarmtemplate_id);",
-									"                    // console.log(\"Setting Alarm Template ID to \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
-									"                }",
-									"",
-									"                if (data.networktemplate_id) {",
-									"                    pm.collectionVariables.set(\"c_networktemplate_id\", data.networktemplate_id);",
-									"                    // console.log(\"Setting Network Template ID to \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
-									"                }",
-									"",
-									"                foundTemplateSite = true;",
-									"            }",
-									"        }",
-									"    } else if (((pm.iterationData.get(\"site_template_id\") == \"\") || (pm.iterationData.get(\"site_template_id\") == null)) && ((pm.iterationData.get(\"site_template_name\") != \"\") || (pm.iterationData.get(\"site_template_name\") != null))) {",
-									"        // If site_template_id is not set, use site_template_name to lookup template site",
-									"        console.info(\"Searching for site by name...\");",
-									"        for (var i = 0; i < jsonData.length; i++) {",
-									"            if (jsonData[i].name == pm.iterationData.get(\"site_template_name\")) {",
-									"                var data = jsonData[i];",
-									"",
-									"                if (data.id) {",
-									"                    pm.collectionVariables.set(\"c_site_template_id\", data.id);",
-									"                    // console.log(\"Setting site template ID to \" + pm.collectionVariables.get(\"c_site_template_id\"));",
-									"                }",
-									"",
-									"                if (data.name) {",
-									"                    pm.collectionVariables.set(\"c_site_template_name\", data.name);",
-									"                    // console.log(\"Setting site template name to \" + pm.collectionVariables.get(\"c_site_template_name\"));",
-									"                }",
-									"",
-									"                if (data.sitegroup_ids) {",
-									"                    pm.collectionVariables.set(\"c_sitegroup_ids\", JSON.stringify(data.sitegroup_ids));",
-									"                    // console.log(\"Site Group IDs: \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
-									"                }",
-									"",
-									"                if (data.rftemplate_id) {",
-									"                    pm.collectionVariables.set(\"c_rftemplate_id\", data.rftemplate_id);",
-									"                    // console.log(\"Setting RF Template ID to \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
-									"                }",
-									"",
-									"                if (data.secpolicy_id) {",
-									"                    pm.collectionVariables.set(\"c_secpolicy_id\", data.secpolicy_id);",
-									"                    // console.log(\"Setting Security Policy ID to \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
-									"                }",
-									"",
-									"                if (data.alarmtemplate_id) {",
-									"                    pm.collectionVariables.set(\"c_alarmtemplate_id\", data.alarmtemplate_id);",
-									"                    // console.log(\"Setting Alarm Template ID to \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
-									"                }",
-									"",
-									"                if (data.networktemplate_id) {",
-									"                    pm.collectionVariables.set(\"c_networktemplate_id\", data.networktemplate_id);",
-									"                    // console.log(\"Setting Network Template ID to \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
-									"                }",
-									"                ",
-									"                foundTemplateSite = true;",
-									"            }",
-									"        }",
-									"    } else {",
-									"        // If both site_template_id and site_template_name are empty, alert user and fail.",
-									"        console.warn(\"Template ID or name not provided.\")",
-									"        foundTemplateSite = false;",
-									"    }",
-									"",
-									"    pm.test(\"Verifying template site exists...\", function(){",
-									"        pm.expect(foundTemplateSite).to.eql(true);",
-									"    });",
-									"",
-									"    if (foundTemplateSite == false) {",
-									"        console.info(\"No template found, exiting...\");",
-									"        nextRequest = null;",
-									"    }",
-									"",
-									"    console.info(\"Template site ID:             \" + pm.collectionVariables.get(\"c_site_template_id\"));",
-									"    console.info(\"Template site name:           \" + pm.collectionVariables.get(\"c_site_template_name\"));",
-									"    console.info(\"Template site groups:         \" + pm.collectionVariables.get(\"c_sitegroup_ids\"));",
-									"    console.info(\"Template RF template ID:      \" + pm.collectionVariables.get(\"c_rftemplate_id\"));",
-									"    console.info(\"Template security policy ID:  \" + pm.collectionVariables.get(\"c_secpolicy_id\"));",
-									"    console.info(\"Template alarm template ID:   \" + pm.collectionVariables.get(\"c_alarmtemplate_id\"));",
-									"    console.info(\"Template network template ID: \" + pm.collectionVariables.get(\"c_networktemplate_id\"));",
-									"",
-									"    // Move to the next request",
-									"    postman.setNextRequest(nextRequest);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"// Ensure all collection variables are removed before running.",
-									"pm.collectionVariables.unset(\"c_site_id\");",
-									"pm.collectionVariables.unset(\"c_site_template_id\");",
-									"pm.collectionVariables.unset(\"c_site_template_name\");",
-									"pm.collectionVariables.unset(\"c_site_address\");",
-									"pm.collectionVariables.unset(\"c_sitegroup_ids\");",
-									"pm.collectionVariables.unset(\"c_rftemplate_id\");",
-									"pm.collectionVariables.unset(\"c_secpolicy_id\");",
-									"pm.collectionVariables.unset(\"c_alarmtemplate_id\");",
-									"pm.collectionVariables.unset(\"c_networktemplate_id\");",
-									"pm.collectionVariables.unset(\"c_site_template_settings\");",
-									"",
-									"pm.collectionVariables.unset(\"country_code\");",
-									"pm.collectionVariables.unset(\"formatted_address\");",
-									"pm.collectionVariables.unset(\"lat\");",
-									"pm.collectionVariables.unset(\"lng\");",
-									"pm.collectionVariables.unset(\"time_zone\");"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":org_id",
-								"sites"
-							],
-							"variable": [
-								{
-									"key": "org_id",
-									"value": "{{org_id}}"
-								}
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "ok",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "",
-									"variable": [
-										{
-											"key": "orgr_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
-						}
-					]
-				},
-				{
-					"name": "cloner_getSiteSettingsFromTemplate",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"cloner_googleGeocode\";",
-									"let jsonData = pm.response.json();",
-									"",
-									"// Remove unique settings from array",
-									"delete jsonData.id;",
-									"delete jsonData.site_id;",
-									"delete jsonData.org_id;",
-									"delete jsonData.created_time;",
-									"delete jsonData.modified_time;",
-									"",
-									"// Assign sanitized settings array to collection variable `c_site_template_settings`",
-									"pm.collectionVariables.set(\"c_site_template_settings\", JSON.stringify(jsonData));",
-									"",
-									"postman.setNextRequest(nextRequest);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"sites",
-								":site_id",
-								"setting"
-							],
-							"variable": [
-								{
-									"key": "site_id",
-									"value": "{{c_site_template_id}}"
-								}
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "ok",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "",
-									"variable": [
-										{
-											"key": "orgr_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
-						}
-					]
-				},
-				{
-					"name": "cloner_googleGeocode",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"// URL encode the site address provided in the CSV file and set to the `c_site_address` variable",
-									"var encoded = encodeURIComponent(pm.iterationData.get(\"site_address\") );",
-									"pm.collectionVariables.set(\"c_site_address\", encoded);"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"cloner_googleTimeZone\";",
-									"let jsonData = pm.response.json();",
-									"",
-									"var doNext = false;",
-									"",
-									"pm.collectionVariables.set(\"formatted_address\", jsonData.results[0].formatted_address);",
-									"pm.collectionVariables.set(\"lat\", parseFloat(jsonData.results[0].geometry.location.lat));",
-									"pm.collectionVariables.set(\"lng\", parseFloat(jsonData.results[0].geometry.location.lng));",
-									"",
-									"for (var i = 0; i < jsonData.results[0].address_components.length; i++) {",
-									"    if (jsonData.results[0].address_components[i].types.indexOf(\"country\") > -1) {",
-									"        pm.collectionVariables.set(\"country_code\", jsonData.results[0].address_components[i].short_name);",
-									"        doNext = true;",
-									"    }",
-									"};",
-									"",
-									"if (doNext == false){",
-									"     nextRequest = null;",
-									"};",
-									"",
-									"console.info(\"Country code: \" + pm.collectionVariables.get(\"country_code\"));",
-									"console.info(\"Address: \" + pm.collectionVariables.get(\"formatted_address\"));",
-									"console.info(\"Lat/lng: \" + pm.collectionVariables.get(\"lat\") + \"/\" + pm.collectionVariables.get(\"lng\"));",
-									"",
-									"postman.setNextRequest(nextRequest);",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"connection": true,
-							"accept-encoding": true,
-							"accept": true,
-							"user-agent": true,
-							"host": true
-						}
-					},
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "https://maps.googleapis.com/maps/api/geocode/json?address={{c_site_address}}&key={{google_api_key}}",
-							"protocol": "https",
-							"host": [
-								"maps",
-								"googleapis",
-								"com"
-							],
-							"path": [
-								"maps",
-								"api",
-								"geocode",
-								"json"
-							],
-							"query": [
-								{
-									"key": "address",
-									"value": "{{c_site_address}}"
-								},
-								{
-									"key": "key",
-									"value": "{{google_api_key}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "cloner_googleTimeZone",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"cloner_createOrgSite\";",
-									"let jsonData = pm.response.json();",
-									"",
-									"pm.test(\"TimeZoneID is present\", function() {",
-									"    pm.expect(jsonData).to.have.property(\"timeZoneId\");",
-									"});",
-									"",
-									"pm.collectionVariables.set(\"time_zone\", jsonData.timeZoneId);",
-									"",
-									"console.info(\"Timezone: \" + pm.collectionVariables.get(\"time_zone\"));",
-									"",
-									"postman.setNextRequest(nextRequest);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://maps.googleapis.com/maps/api/timezone/json?location={{lat}},{{lng}}&timestamp={{$timestamp}}&key={{google_api_key}}",
-							"protocol": "https",
-							"host": [
-								"maps",
-								"googleapis",
-								"com"
-							],
-							"path": [
-								"maps",
-								"api",
-								"timezone",
-								"json"
-							],
-							"query": [
-								{
-									"key": "location",
-									"value": "{{lat}},{{lng}}"
-								},
-								{
-									"key": "timestamp",
-									"value": "{{$timestamp}}"
-								},
-								{
-									"key": "key",
-									"value": "{{google_api_key}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "cloner_createOrgSite",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var nextRequest = \"cloner_updateSiteSettingsFromTemplate\";",
-									"let jsonData = pm.response.json();",
-									"",
-									"pm.test(\"New site ID is present\", function() {",
-									"    pm.expect(jsonData).to.have.property(\"id\");",
-									"});",
-									"",
-									"pm.test(\"New site name matches CSV\", function() {",
-									"    pm.expect(jsonData.name).to.equal(pm.iterationData.get(\"site_name\"));",
-									"});",
-									"",
-									"pm.collectionVariables.set(\"c_site_id\", jsonData.id);",
-									"",
-									"console.info(\"Created site: \" + jsonData.name);",
-									"console.info(\"New ID: \" + jsonData.id);",
-									"",
-									"postman.setNextRequest(nextRequest);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"accept-encoding": true,
-							"connection": true,
-							"user-agent": true
-						}
-					},
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"{{site_name}}\",\n    \"timezone\": \"{{time_zone}}\",\n    \"country_code\": \"{{country_code}}\",\n    \"latlng\": { \"lat\": {{lat}}, \"lng\": {{lng}} },\n    \"address\": \"{{formatted_address}}\",\n    \"sitegroup_ids\": {{c_sitegroup_ids}},\n    \"rftemplate_id\": \"{{c_rftemplate_id}}\",\n    \"secpolicy_id\": \"{{c_secpolicy_id}}\",\n    \"alarmtemplate_id\": \"{{c_alarmtemplate_id}}\",\n    \"networktemplate_id\": \"{{c_networktemplate_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":org_id",
-								"sites"
-							],
-							"variable": [
-								{
-									"key": "org_id",
-									"value": "{{org_id}}"
-								}
-							]
-						},
-						"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nname|string|Required. The name of the site\ntimezone|string|Timezone the site is at\ncountry_code|string|country code for the site (for AP config generation), in two-character\nlatlng|latlng|site location\naddress|string|full address of the site\nlat|float|latitude\nlng|float|longitude\nsitegroup_ids|list|sitegroups this site belongs to\nrftemplate_id|string|RF Template ID, this takes precedence over Site Settings\nsecpolicy_id|string|SecPolicy ID\nalarmtemplate_id|string|Alarm Template ID, this takes precedence over the Org-level alarmtemplate_id"
-					},
-					"response": [
-						{
-							"name": "OK",
-							"originalRequest": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"name": "Content-Type",
-										"type": "text",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n    \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n    \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n\n    \"latlng\": { \"lat\": 37.295833, \"lng\": -122.032946 },\n    \"sitegroup_ids\": [ \"581328b6-e382-f54e-c9dc-999983183a34\", \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\" ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
-									"protocol": "https",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"orgs",
-										":org_id",
-										"sites"
-									],
-									"variable": [
-										{
-											"key": "org_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "{\n    \"id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"latlng\": {\n        \"lat\": 37.295833,\n        \"lng\": -122.032946\n    },\n    \"sitegroup_ids\": [\n        \"581328b6-e382-f54e-c9dc-999983183a34\",\n        \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n    ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}"
-						}
-					]
-				},
-				{
-					"name": "cloner_updateSiteSettingsFromTemplate",
+					"name": "updateSiteCloning_sitecreation",
 					"event": [
 						{
 							"listen": "test",
@@ -1542,7 +919,8 @@
 							"variable": [
 								{
 									"key": "site_id",
-									"value": "{{c_site_id}}"
+									"value": "{{c_site_id}}",
+									"type": "string"
 								}
 							]
 						},
@@ -1551,7 +929,7 @@
 					"response": []
 				}
 			],
-			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.  For this particular collection, it will also adjust the site settings based on an existing site (site_template_id or site_template_name).\n\nThis is intended to only make changes to newly created sites.  If you want all sites including existing sites to have a specific setting, please use the regular site creation collection and then perform the Generic Update Sites collection flow post creation.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\n- `site_name`\n- `site_address` (Must be a valid street address and enclosed in quotes)\n- `site_template_id` (If this column is empty, `site_template_name` MUST be provided and must match an existing site name)\n- `site_template_name` (If `site_template_id` is provided this value will be ignored)\n\nExample CSV:\n\nsite_name,site_address,site_template_id,site_template_name\n```\nAdonis,\"5592 S. Adonis Pl., Boise, ID 83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,Template Site Name\n```",
+			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n## Required Environmental Variables:\n\n`apitoken` -  This your Mist dashboard API token.  It should have permissions to create sites in Mist. </br></br>\n\n## Optional Environment Variables\n`google_api_token` This is a google API token that has access to geocode APIs.  If you provide all the geocoding/timezone values, this will not be required.  See Scenario `Skip Geocoding`\n\n\n## CSV Required Values:\n`site_name`</br>\n`site_address` This address should be in quotes in the CSV if it contains commas. </br>\n\n## CSV Optional Values:\n`sitegroup_ids` this should be presented as a JSON list of sitegroup IDs.\n* Example: `[\"xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"]`</br></br>\n\n`rftemplate_id` This should be the rftemplate_id you want applied to this site\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n`alarmtemplate_id` This should be the alarmtemplate_id you want applied\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n## Scenario Options:\n\n### Skip Geocoding:\nIn order to skip geocoding, you must provide the following values in the CSV.  See the example CSV for details on what these should look like\n\n#### Required Values:\n* `lat` this is the site lattitude\n* `lng` this is the site longitude\n* `time_zone` This is the site time_zone\n* `country_code`: The 2 letter country code.\n\n### Clone Existing Site\nIn this scenario, we are going to clone the settings of an existing site, and create a new site with the values passed in.\n\n#### Required Values:\n* `site_template_name` This is the name of the site you want to copy.\n\n\n## Example CSV:\n\n```\nsite_name,site_address,rftemplate_id,lat,lng,time_zone,country_code,site_template_name,sitegroup_ids,alarmtemplate_id\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nCloning-Site,\"350 State St, Salt Lake City, UT 84103\",,,,,,Jake R Snyder,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nWashington4,\"416 Sid Snyder Avenue SW, Olympia, Washington 98504\",,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\nNormal Site with RF Template,\"900 Court St NE, Salem, OR 97301\",9f65efea-0535-43af-80e5-f9f7d2bb8917,,,,,,,\nNormal Site with SiteGroup,\"900 Court St NE, Salem, OR 97301\",,,,,,,\"[\"\"31d37657-64c7-4e7d-98d2-1b077160b952\"\"]\",\nNormal Site with AlarmTemplate,\"900 Court St NE, Salem, OR 97301\",,,,,,,,4c4e03b2-5774-430f-8c57-6fbd1251f3df\n```",
 			"auth": {
 				"type": "apikey",
 				"apikey": [
@@ -1582,9 +960,7 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"pm.test(\"Status code is 200\", function() {",
-							"    pm.response.to.have.status(200);",
-							"});"
+							""
 						]
 					}
 				}
@@ -1632,7 +1008,8 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}"
+									"value": "{{org_id}}",
+									"type": "string"
 								}
 							]
 						},
@@ -1716,7 +1093,8 @@
 							"variable": [
 								{
 									"key": "orgr_id",
-									"value": "{{org_id}}"
+									"value": "{{org_id}}",
+									"type": "string"
 								}
 							]
 						}
@@ -1838,7 +1216,8 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}"
+									"value": "{{org_id}}",
+									"type": "string"
 								}
 							]
 						},
@@ -1881,7 +1260,7 @@
 					]
 				}
 			],
-			"description": "This collection will use a CSV Template to assign multiple devices to a site.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\n{{site_name}}\n{{mac_address}}\n{{no_reassignment}} - Should be `true` or `false` - If you want to reassign inventory that is already assigned to a site.\n\n\n\nExample CSV:\n```\nsite_name,mac_address,force_reassignment\nsite01,aabbccddeeff,false\n```",
+			"description": "This collection will use a CSV Template to assign multiple devices to a site.\n\n\nRequired Environmental Variables:\n\n`apitoken` -  This your Mist dashboard API token.  It should have permissions to assign inventory to sites in Mist.</br>\n\n`org_id` This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\n`site_name`</br>\n`mac_address`</br>\n`force_reassignment` - Should be `true` or `false` - If you want to reassign inventory that is already assigned to a site, select true.  Should be all lower-case, but be warned that excel hates that (use text for cell format).\n\n\n\nExample CSV:\n```\nsite_name,mac_address,force_reassignment\nsite01,aabbccddeeff,false\n```",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1909,6 +1288,128 @@
 				{
 					"name": "Generic Update Sites",
 					"item": [
+						{
+							"name": "getSiteIDByName_Generic",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"console.log(`Starting Site ${pm.iterationData.get(\"site_name\")}`)",
+											"var nextRequest = null",
+											"var foundDup = false",
+											"var jsonData = JSON.parse(responseBody);",
+											"",
+											"",
+											"",
+											"if (!!pm.collectionVariables.get(\"c_site_name\")) {",
+											"    console.info(`searching for site ${pm.collectionVariables.get(\"c_site_name\")} `);",
+											"    for (var i = 0; i < jsonData.length; i++) {",
+											"    if (jsonData[i].name == pm.collectionVariables.get(\"c_site_name\")) {",
+											"        pm.collectionVariables.set(\"c_site_id\", jsonData[i].id)",
+											"        console.info(\"Found Site\")",
+											"        console.info(`Site ID = ${pm.collectionVariables.get(\"c_site_id\")}`)",
+											"        nextRequest = \"updateSiteSettings - Generic\"",
+											"        }",
+											"}",
+											"}",
+											"else if (!!pm.iterationData.get(\"id\")) {",
+											"    pm.collection.set(\"c_site_id\", pm.iterationData.get(\"id\"))",
+											"    nextRequest = \"updateSiteSettings - Generic\"",
+											"};",
+											"",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"",
+											"pm.test(\"site_id is set\", function() {",
+											"  pm.expect(!!pm.collectionVariables.get(\"c_site_id\"));",
+											"});",
+											"",
+											"console.log(`setting next request ${nextRequest}`);",
+											"postman.setNextRequest(nextRequest);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Ensure all collection variables are removed before running.",
+											"pm.collectionVariables.unset(\"c_site_name\");",
+											"pm.collectionVariables.unset(\"c_site_id\");",
+											"",
+											"//Handling of digit only sites with quotes.",
+											"var formatted_string = pm.iterationData.get(\"site_name\")",
+											"if (!!pm.iterationData.get(\"site_name\")) {",
+											"    if (formatted_string.includes(\"\\'\") || formatted_string.includes(\"\\\"\")) {",
+											"        console.info(\"stripping formatting of site_name\")",
+											"        formatted_string = formatted_string.replace(/'/g, \"\");",
+											"        formatted_string = formatted_string.replace(/\"/g, \"\");",
+											"        console.log(`Formatted Name ${formatted_string}`);",
+											"        pm.collectionVariables.set(\"c_site_name\", formatted_string)",
+											"    }",
+											"    else {",
+											"        pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
+											"    }",
+											"}",
+											"console.info(`Site Name = ${pm.collectionVariables.get(\"c_site_name\")}`)"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":orgr_id",
+										"sites"
+									],
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": "{{org_id}}",
+											"type": "string"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "ok",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "",
+											"variable": [
+												{
+													"key": "orgr_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+								}
+							]
+						},
 						{
 							"name": "updateSiteSettings - Generic",
 							"event": [
@@ -1969,7 +1470,8 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}"
+											"value": "{{site_id}}",
+											"type": "string"
 										}
 									]
 								},
@@ -1978,7 +1480,7 @@
 							"response": []
 						}
 					],
-					"description": "This collection will use a the exported JSON payload of all sites to push arbitrary config to each site.  \n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Generic` to the payload you want to push.",
+					"description": "This collection will iterate through sites and set the payload to the settings you define in the `updateSiteSettings - Generic` API call\n\nYou can source the data from a CSV with `site_name`, or you can run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to modify sites\n\n## Required:\n\nEdit the payload of `updateSiteSettings - Generic` to specify the firmware settings you want.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -2004,7 +1506,7 @@
 					"name": "Set Site Variables",
 					"item": [
 						{
-							"name": "updateSiteSettings - Generic",
+							"name": "updateSiteSettings - SiteVars",
 							"event": [
 								{
 									"listen": "test",
@@ -2073,7 +1575,8 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}"
+											"value": "{{site_id}}",
+											"type": "string"
 										}
 									]
 								},
@@ -2082,7 +1585,7 @@
 							"response": []
 						}
 					],
-					"description": "This collection will use a the exported JSON payload of all sites to push arbitrary config to each site.  \n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Generic` to the payload you want to push.",
+					"description": "This collection will use a the exported JSON payload of all sites to push arbitrary config to each site.  \n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - SiteVars` to the payload you want to push.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -2105,8 +1608,130 @@
 					]
 				},
 				{
-					"name": "Set Firmware Version",
+					"name": "Set Autoupgrade Firmware",
 					"item": [
+						{
+							"name": "getSiteIDByName_Firmware",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"console.log(`Starting Site ${pm.iterationData.get(\"site_name\")}`)",
+											"var nextRequest = null",
+											"var foundDup = false",
+											"var jsonData = JSON.parse(responseBody);",
+											"",
+											"",
+											"",
+											"if (!!pm.collectionVariables.get(\"c_site_name\")) {",
+											"    console.info(`searching for site ${pm.collectionVariables.get(\"c_site_name\")} `);",
+											"    for (var i = 0; i < jsonData.length; i++) {",
+											"    if (jsonData[i].name == pm.collectionVariables.get(\"c_site_name\")) {",
+											"        pm.collectionVariables.set(\"c_site_id\", jsonData[i].id)",
+											"        console.info(\"Found Site\")",
+											"        console.info(`Site ID = ${pm.collectionVariables.get(\"c_site_id\")}`)",
+											"        nextRequest = \"updateSiteSettings - Firmware\"",
+											"        }",
+											"}",
+											"}",
+											"else if (!!pm.iterationData.get(\"id\")) {",
+											"    pm.collection.set(\"c_site_id\", pm.iterationData.get(\"id\"))",
+											"    nextRequest = \"updateSiteSettings - Firmware\"",
+											"};",
+											"",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"",
+											"pm.test(\"site_id is set\", function() {",
+											"  pm.expect(!!pm.collectionVariables.get(\"c_site_id\"));",
+											"});",
+											"",
+											"console.log(`setting next request ${nextRequest}`);",
+											"postman.setNextRequest(nextRequest);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Ensure all collection variables are removed before running.",
+											"pm.collectionVariables.unset(\"c_site_name\");",
+											"pm.collectionVariables.unset(\"c_site_id\");",
+											"",
+											"//Handling of digit only sites with quotes.",
+											"var formatted_string = pm.iterationData.get(\"site_name\")",
+											"if (!!pm.iterationData.get(\"site_name\")) {",
+											"    if (formatted_string.includes(\"\\'\") || formatted_string.includes(\"\\\"\")) {",
+											"        console.info(\"stripping formatting of site_name\")",
+											"        formatted_string = formatted_string.replace(/'/g, \"\");",
+											"        formatted_string = formatted_string.replace(/\"/g, \"\");",
+											"        console.log(`Formatted Name ${formatted_string}`);",
+											"        pm.collectionVariables.set(\"c_site_name\", formatted_string)",
+											"    }",
+											"    else {",
+											"        pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
+											"    }",
+											"}",
+											"console.info(`Site Name = ${pm.collectionVariables.get(\"c_site_name\")}`)"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":orgr_id",
+										"sites"
+									],
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": "{{org_id}}",
+											"type": "string"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "ok",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "",
+											"variable": [
+												{
+													"key": "orgr_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+								}
+							]
+						},
 						{
 							"name": "updateSiteSettings - Firmware",
 							"event": [
@@ -2118,6 +1743,15 @@
 											"pm.test(\"Status code is 200\", function() {",
 											"  pm.expect(pm.response.code).to.equal(200);",
 											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"console.info(`Site ID = ${pm.collectionVariables.get(\"c_site_id\")}`)"
 										],
 										"type": "text/javascript"
 									}
@@ -2167,7 +1801,8 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{id}}"
+											"value": "{{c_site_id}}",
+											"type": "string"
 										}
 									]
 								},
@@ -2176,7 +1811,7 @@
 							"response": []
 						}
 					],
-					"description": "This collection will use a the exported JSON payload of all sites to push updated firmware settings to each site.\n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Firmware` to specify the firmware settings you want.",
+					"description": "This collection will iterate through sites and set the payload to the settings you define in the `updateSiteSettings - Firmware` API call\n\nYou can source the data from a CSV with `site_name`, or you can run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n\n## Required:\n\nEdit the payload of `updateSiteSettings - Firmware` to specify the firmware settings you want.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -2202,32 +1837,72 @@
 					"name": "Add Webhook To Sites",
 					"item": [
 						{
-							"name": "getSiteWebhooks by Name",
+							"name": "getSiteIDByName_Generic Copy",
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"var nextRequest = \"createSiteWebhook\"",
+											"console.log(`Starting Site ${pm.iterationData.get(\"site_name\")}`)",
+											"var nextRequest = null",
 											"var foundDup = false",
 											"var jsonData = JSON.parse(responseBody);",
-											"for (var i = 0; i < jsonData.length; i++) {",
-											"    if (jsonData[i].name == pm.variables.get(\"site_name\")) {",
-											"        console.log(\"Found Duplicate Site\")",
-											"        foundDup = true",
+											"",
+											"",
+											"",
+											"if (!!pm.collectionVariables.get(\"c_site_name\")) {",
+											"    console.info(`searching for site ${pm.collectionVariables.get(\"c_site_name\")} `);",
+											"    for (var i = 0; i < jsonData.length; i++) {",
+											"    if (jsonData[i].name == pm.collectionVariables.get(\"c_site_name\")) {",
+											"        pm.collectionVariables.set(\"c_site_id\", jsonData[i].id)",
+											"        console.info(\"Found Site\")",
+											"        console.info(`Site ID = ${pm.collectionVariables.get(\"c_site_id\")}`)",
+											"        nextRequest = \"updateSiteSettings - Generic\"",
 											"        }",
+											"}",
+											"}",
+											"else if (!!pm.iterationData.get(\"id\")) {",
+											"    pm.collection.set(\"c_site_id\", pm.iterationData.get(\"id\"))",
+											"    nextRequest = \"updateSiteSettings - Generic\"",
 											"};",
 											"",
-											"pm.test(\"Verify site_name does not exist\", function(){",
-											"    pm.expect(foundDup).to.eql(false);",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
 											"});",
-											"if (foundDup == true){",
-											"     nextRequest = null",
-											"};",
 											"",
+											"pm.test(\"site_id is set\", function() {",
+											"  pm.expect(!!pm.collectionVariables.get(\"c_site_id\"));",
+											"});",
 											"",
-											"console.log(nextRequest)",
+											"console.log(`setting next request ${nextRequest}`);",
 											"postman.setNextRequest(nextRequest);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Ensure all collection variables are removed before running.",
+											"pm.collectionVariables.unset(\"c_site_name\");",
+											"pm.collectionVariables.unset(\"c_site_id\");",
+											"",
+											"//Handling of digit only sites with quotes.",
+											"var formatted_string = pm.iterationData.get(\"site_name\")",
+											"if (!!pm.iterationData.get(\"site_name\")) {",
+											"    if (formatted_string.includes(\"\\'\") || formatted_string.includes(\"\\\"\")) {",
+											"        console.info(\"stripping formatting of site_name\")",
+											"        formatted_string = formatted_string.replace(/'/g, \"\");",
+											"        formatted_string = formatted_string.replace(/\"/g, \"\");",
+											"        console.log(`Formatted Name ${formatted_string}`);",
+											"        pm.collectionVariables.set(\"c_site_name\", formatted_string)",
+											"    }",
+											"    else {",
+											"        pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
+											"    }",
+											"}",
+											"console.info(`Site Name = ${pm.collectionVariables.get(\"c_site_name\")}`)"
 										],
 										"type": "text/javascript"
 									}
@@ -2237,7 +1912,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "https://{{host}}/api/v1/sites/:site_id/webhooks",
+									"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
 									"protocol": "https",
 									"host": [
 										"{{host}}"
@@ -2245,21 +1920,22 @@
 									"path": [
 										"api",
 										"v1",
-										"sites",
-										":site_id",
-										"webhooks"
+										"orgs",
+										":orgr_id",
+										"sites"
 									],
 									"variable": [
 										{
-											"key": "site_id",
-											"value": "{{site_id}}"
+											"key": "orgr_id",
+											"value": "{{org_id}}",
+											"type": "string"
 										}
 									]
 								}
 							},
 							"response": [
 								{
-									"name": "OK",
+									"name": "ok",
 									"originalRequest": {
 										"method": "GET",
 										"header": [],
@@ -2267,7 +1943,7 @@
 											"raw": "",
 											"variable": [
 												{
-													"key": "site_id",
+													"key": "orgr_id",
 													"value": ""
 												}
 											]
@@ -2278,7 +1954,7 @@
 									"_postman_previewlanguage": "json",
 									"header": [],
 									"cookie": [],
-									"body": "[\n    {\n        \"name\": \"analytic\",\n        \"type\": \"http-post\",\n        \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n        \"secret\": \"secret\",\n        \"headers\": {\n            \"x-custom-1\": \"your_custom_header_value1\",\n            \"x-custom-2\": \"your_custom_header_value2\"\n        },\n        \"verify_cert\": false,\n        \"enabled\": true,\n        \"topics\": [\n            \"location\",\n            \"zone\",\n            \"device-events\",\n            \"alarms\",\n            \"audits\",\n            \"client-sessions\",\n            \"device-updowns\"\n        ]\n    },\n    {\n        \"name\": \"analytic\",\n        \"type\": \"splunk\",\n        \"url\": \"https://my.splunk.host:8088/services/collector\",\n        \"splunk_token\": \"token\",\n        \"verify_cert\": false,\n        \"enabled\": true,\n        \"topics\": [\n            \"location\",\n            \"zone\",\n            \"vbeacon\",\n            \"rssizone\",\n            \"asset-raw\",\n            \"client-sessions\",\n            \"device-updowns\"\n        ]\n    }\n]"
+									"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
 								}
 							]
 						},
@@ -2328,13 +2004,102 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}"
+											"value": "{{c_site_id}}",
+											"type": "string"
 										}
 									]
 								},
 								"description": " #### Body Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n name|string|name of the webhook\r\n enabled|boolean|whether webhook is enabled\r\n topics|list|list of subscribed topics: location/zone/vbeacon/rssizone/asset-raw/device-events/alarms/audits/client-sessions\r\n type|string|http-post (default) / splunk / google-pubsub / aws-sns\r\n url|string|url\r\n headers|object|custom headers: the headers name and value must be string, total bytes of headers name and value must be less than 1000\r\n secret|string|optional, when type=http-post, if provided, X-Mist-Signature in HTTP header will be the signature of HMAC_SHA1(secret, body)\r\n verify_cert|boolean|when url uses HTTPS, whether to verify the certificate, default is false\r\n\r\n* If headers format is invalid, “X-Mist-Error”: “headers format invalid” will be sent.\r\n* If total bytes of headers exceed 1000, “X-Mist-Error”: “headers too big” will be sent.\r\n* If any header value is not string, “X-Mist-Error”: “header[%s] not a string” will be sent."
 							},
 							"response": [
+								{
+									"name": "Example Delivery of \"location\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "[\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"sdk\",\n        \"id\": \"de87bf9d-183f-e383-cc68-6ba43947d403\",\n        \"name\": \"optional\"\n    },\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"wifi\",\n        \"mac\": \"5684dae9ac8b\"\n    },\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"asset\",\n        \"mac\": \"7fc2936fd243\",\n        \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n        \"ibeacon_major\": 13,\n        \"ibeacon_minor\": 138,\n        \"eddystone_uid_namespace\": \"2818e3868dec25629ede\",\n        \"eddystone_uid_instance\": \"5c5b35000001\",\n        \"eddystone_url_url\": \"https://www.abc.com\",\n        \"mfg_company_id\": 935,\n        \"mfg_data\": \"648520a1020000\",\n        \"battery_voltage\": 3370\n    }\n]"
+								},
+								{
+									"name": "Example Delivery of \"device-updowns\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"device-updowns\",\n    \"events\": [\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_DISCONNECTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        },\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_CONNECTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        },\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_RESTARTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        }\n    ]\n}"
+								},
 								{
 									"name": "Example Delivery of \"alarms\" via http-post",
 									"originalRequest": {
@@ -2380,7 +2145,7 @@
 									"body": "{\n    \"topic\": \"alarms\",\n    \"events\": [\n        {\n            \"aps\": [\n                \"5c5b350e1003\"\n            ],\n            \"bssids\": [\n                \"00024a00310c\",\n                \"5c5b3500e10f\",\n                \"000f24090ff1\",\n                \"c03f0e76fe91\",\n                \"e091f512eda2\",\n                \"e894f6258a3f\",\n                \"40169f1157a4\",\n                \"40169f1151b2\",\n                \"c03f0e7aba91\",\n                \"5c5b35090ff3\"\n            ],\n            \"count\": 16,\n            \"id\": \"95193bda-1fef-4ea6-9e5b-97c9f5e0655a\",\n            \"last_seen\": 1549068720,\n            \"ssids\": [\n                \"qwerty\",\n                \"A-Dot\",\n                \"xfinity\",\n                \"alpha\"\n            ],\n            \"timestamp\": 1549068202,\n            \"type\": \"rogue-ap-detected\",\n            \"update\": true,\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\"\n        }\n    ]\n}"
 								},
 								{
-									"name": "Example Delivery of \"location\" via http-post",
+									"name": "Example Delivery of \"client-sessions\" via http-post",
 									"originalRequest": {
 										"method": "POST",
 										"header": [],
@@ -2421,7 +2186,51 @@
 										}
 									],
 									"cookie": [],
-									"body": "[\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"sdk\",\n        \"id\": \"de87bf9d-183f-e383-cc68-6ba43947d403\",\n        \"name\": \"optional\"\n    },\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"wifi\",\n        \"mac\": \"5684dae9ac8b\"\n    },\n    {\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n        \"x\": 13.5,\n        \"y\": 3.2,\n        \"timestamp\": 1461220784,\n        \"type\": \"asset\",\n        \"mac\": \"7fc2936fd243\",\n        \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n        \"ibeacon_major\": 13,\n        \"ibeacon_minor\": 138,\n        \"eddystone_uid_namespace\": \"2818e3868dec25629ede\",\n        \"eddystone_uid_instance\": \"5c5b35000001\",\n        \"eddystone_url_url\": \"https://www.abc.com\",\n        \"mfg_company_id\": 935,\n        \"mfg_data\": \"648520a1020000\",\n        \"battery_voltage\": 3370\n    }\n]"
+									"body": "{\n    \"topic\": \"client-sessions\",\n    \"events\": [\n        {\n            \"mac\": \"5684dae9ac8b\",\n            \"ap\": \"5c5b35000001\",\n            \"band\": \"5\",\n            \"connect\": 1549047906,\n            \"disconnect\": 1549048900,\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"device_id\": \"00000000-0000-0000-1000-5c5b350e01c7\",\n            \"id\": \"8e00dd48-b918-4d9b-b40d-b98989ac76a7\",\n            \"message\": \"Update Device \\\"Reception\\\"\",\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"timestamp\": 1549047906.201053,\n            \"client_family\": \"Mac\",\n            \"client_manufacture\": \"Apple\",\n            \"client_model\": \"8+\",\n            \"client_os\": \"Mojave\",\n            \"site_name\": \"Sample Site\",\n            \"termination_reason\": 1\n        }\n    ]\n}"
+								},
+								{
+									"name": "Example Delivery of \"device-events\" via http-post",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
+										},
+										"url": {
+											"raw": ""
+										}
+									},
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Host",
+											"value": "hooks.abc.com:443",
+											"type": "text"
+										},
+										{
+											"key": "User-Agent",
+											"value": "Mist-webhook",
+											"type": "text"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json",
+											"type": "text"
+										},
+										{
+											"key": "Content-Length",
+											"value": "615",
+											"type": "text"
+										},
+										{
+											"key": "X-Mist-Signature",
+											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
+											"type": "text"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"topic\": \"device-events\",\n    \"events\": [\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_RESTARTED\",\n            \"ap\": \"5c5b35000001\",\n            \"timestamp\": 1461220784\n        }\n    ]\n}"
 								},
 								{
 									"name": "Example Delivery of \"audits\" via http-post",
@@ -2512,94 +2321,6 @@
 									"body": "{\n    \"topic\": \"zone\",\n    \"events\": [\n        {\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n            \"zone_id\": \"8ac84899-32db-6327-334c-9b6d58544cfe\",\n            \"trigger\": \"enter\",\n            \"timestamp\": 1461220784,\n            \"type\": \"sdk\",\n            \"id\": \"de87bf9d-183f-e383-cc68-6ba43947d403\",\n            \"name\": \"optional\"\n        },\n        {\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n            \"zone_id\": \"8ac84899-32db-6327-334c-9b6d58544cfe\",\n            \"trigger\": \"enter\",\n            \"timestamp\": 1461220784,\n            \"type\": \"wifi\",\n            \"mac\": \"5684dae9ac8b\"\n        },\n        {\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n            \"zone_id\": \"8ac84899-32db-6327-334c-9b6d58544cfe\",\n            \"trigger\": \"enter\",\n            \"timestamp\": 1461220784,\n            \"type\": \"asset\",\n            \"mac\": \"7fc2936fd243\",\n            \"asset_id\": \"c180b858-8f39-11e7-a7a5-346895ed1b7d\"\n        }\n    ]\n}"
 								},
 								{
-									"name": "Example Delivery of \"device-events\" via http-post",
-									"originalRequest": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
-										},
-										"url": {
-											"raw": ""
-										}
-									},
-									"_postman_previewlanguage": "json",
-									"header": [
-										{
-											"key": "Host",
-											"value": "hooks.abc.com:443",
-											"type": "text"
-										},
-										{
-											"key": "User-Agent",
-											"value": "Mist-webhook",
-											"type": "text"
-										},
-										{
-											"key": "Content-Type",
-											"value": "application/json",
-											"type": "text"
-										},
-										{
-											"key": "Content-Length",
-											"value": "615",
-											"type": "text"
-										},
-										{
-											"key": "X-Mist-Signature",
-											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
-											"type": "text"
-										}
-									],
-									"cookie": [],
-									"body": "{\n    \"topic\": \"device-events\",\n    \"events\": [\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_RESTARTED\",\n            \"ap\": \"5c5b35000001\",\n            \"timestamp\": 1461220784\n        }\n    ]\n}"
-								},
-								{
-									"name": "Example Delivery of \"client-sessions\" via http-post",
-									"originalRequest": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
-										},
-										"url": {
-											"raw": ""
-										}
-									},
-									"_postman_previewlanguage": "json",
-									"header": [
-										{
-											"key": "Host",
-											"value": "hooks.abc.com:443",
-											"type": "text"
-										},
-										{
-											"key": "User-Agent",
-											"value": "Mist-webhook",
-											"type": "text"
-										},
-										{
-											"key": "Content-Type",
-											"value": "application/json",
-											"type": "text"
-										},
-										{
-											"key": "Content-Length",
-											"value": "615",
-											"type": "text"
-										},
-										{
-											"key": "X-Mist-Signature",
-											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
-											"type": "text"
-										}
-									],
-									"cookie": [],
-									"body": "{\n    \"topic\": \"client-sessions\",\n    \"events\": [\n        {\n            \"mac\": \"5684dae9ac8b\",\n            \"ap\": \"5c5b35000001\",\n            \"band\": \"5\",\n            \"connect\": 1549047906,\n            \"disconnect\": 1549048900,\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"device_id\": \"00000000-0000-0000-1000-5c5b350e01c7\",\n            \"id\": \"8e00dd48-b918-4d9b-b40d-b98989ac76a7\",\n            \"message\": \"Update Device \\\"Reception\\\"\",\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"timestamp\": 1549047906.201053,\n            \"client_family\": \"Mac\",\n            \"client_manufacture\": \"Apple\",\n            \"client_model\": \"8+\",\n            \"client_os\": \"Mojave\",\n            \"site_name\": \"Sample Site\",\n            \"termination_reason\": 1\n        }\n    ]\n}"
-								},
-								{
 									"name": "Example Delivery of “asset-raw” via http-post",
 									"originalRequest": {
 										"method": "POST",
@@ -2642,55 +2363,11 @@
 									],
 									"cookie": [],
 									"body": "{\n    \"topic\": \"asset-raw\",\n    \"events\": [\n        {\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"map_id\": \"845a23bf-bed9-e43c-4c86-6fa474be7ae5\",\n            \"timestamp\": 1461220784,\n            \"device_id\": \"00000000-0000-0000-1000-5c5b35000001\",\n            \"beam\": 5,\n            \"rssi\": -71,\n            \"mac\": \"7fc2936fd243\",\n            \"asset_id\": \"a8ec4d8a-4da6-4ead-a486-d0f72e40dd08\",\n            \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n            \"ibeacon_major\": 13,\n            \"ibeacon_minor\": 138,\n            \"mfg_company_id\": 935,\n            \"mfg_data\": \"648520a1020000\"\n        }\n    ]\n}"
-								},
-								{
-									"name": "Example Delivery of \"device-updowns\" via http-post",
-									"originalRequest": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"name\": \"analytic\",\n   \"type\": \"http-post\",\n    \"url\": \"https://username:password@hooks.abc.com/uri/...\",\n    \"secret\": \"secret\",\n    \"headers\":{\n        \"x-custom-1\": \"your_custom_header_value1\",\n        \"x-custom-2\": \"your_custom_header_value2\"\n    }\n}"
-										},
-										"url": {
-											"raw": ""
-										}
-									},
-									"_postman_previewlanguage": "json",
-									"header": [
-										{
-											"key": "Host",
-											"value": "hooks.abc.com:443",
-											"type": "text"
-										},
-										{
-											"key": "User-Agent",
-											"value": "Mist-webhook",
-											"type": "text"
-										},
-										{
-											"key": "Content-Type",
-											"value": "application/json",
-											"type": "text"
-										},
-										{
-											"key": "Content-Length",
-											"value": "615",
-											"type": "text"
-										},
-										{
-											"key": "X-Mist-Signature",
-											"value": "ce3af7760f1289d02bf6a7ad19f3214c4e5c7c2e",
-											"type": "text"
-										}
-									],
-									"cookie": [],
-									"body": "{\n    \"topic\": \"device-updowns\",\n    \"events\": [\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_DISCONNECTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        },\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_CONNECTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        },\n        {\n            \"org_id\": \"2818e386-8dec-2562-9ede-5b8a0fbbdc71\",\n            \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n            \"type\": \"AP_RESTARTED\",\n            \"ap\": \"5c5b35000001\",\n            \"ap_name\": \"AP01\",\n            \"site_name\": \"SJ1\",\n            \"timestamp\": 1461220784\n        }\n    ]\n}"
 								}
 							]
 						}
 					],
-					"description": "This collection will use a the exported JSON payload of all sites to push a site webhook to each site.\nIt will not replace a webhook if it exists today.\n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Webhook` to the webhook settings you want to use.",
+					"description": "This collection will use a the exported JSON payload of all sites to push a site webhook to each site.\nIt will not replace a webhook if it exists today.\n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Webhook` to the webhook settings you want to use.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -2759,7 +2436,8 @@
 									"variable": [
 										{
 											"key": "orgr_id",
-											"value": "{{org_id}}"
+											"value": "{{org_id}}",
+											"type": "string"
 										}
 									]
 								}
@@ -2875,7 +2553,8 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}"
+											"value": "{{site_id}}",
+											"type": "string"
 										}
 									]
 								},
@@ -2934,7 +2613,7 @@
 							]
 						}
 					],
-					"description": "This collection will use a CSV Template to delete multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n{{areYouSure}} This is something you must set in your environment or the delete function will not proceed.  Make sure you clear this variable when you are done.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
+					"description": "This collection will use a CSV Template to delete multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.</br>\n`areYouSure` This is something you must set in your environment or the delete function will not proceed.  Make sure you clear this variable when you are done.\n\n\nCSV Required Values:\n`site_name`\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 					"auth": {
 						"type": "apikey",
 						"apikey": [
@@ -2992,7 +2671,8 @@
 							"variable": [
 								{
 									"key": "orgr_id",
-									"value": "{{org_id}}"
+									"value": "{{org_id}}",
+									"type": "string"
 								}
 							]
 						}
@@ -3023,7 +2703,7 @@
 					]
 				}
 			],
-			"description": "For each of the bulk-site actions, you will need to run the \"getSites - Send and Download\" action first, and perform the send/download.  This will create a json file that contains all the sites for runner to iterate through.\n\nRequired Environment Variables:\n{{apitoken}}\n{{org_id}}\n\n\n\n\n",
+			"description": "For each of the bulk-site actions, you will need to run the \"getSites - Send and Download\" action first, and perform the send/download.  This will create a json file that contains all the sites for runner to iterate through.\n\nRequired Environment Variables:</br>\n`apitoken` </br></br>\n`org_id`",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -3042,145 +2722,6 @@
 							""
 						]
 					}
-				}
-			]
-		},
-		{
-			"name": "Clone Network Template",
-			"item": [
-				{
-					"name": "getOrgNetworkTemplates",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"let jsonData = pm.response.json();",
-									"delete jsonData['id']",
-									"delete jsonData['name']",
-									"delete jsonData['org_id']",
-									"delete jsonData['created_time']",
-									"delete jsonData['modified_time']",
-									"jsonData['name'] = jsonData['name'] + \" Copy\"",
-									"let saveData = JSON.stringify(jsonData);",
-									"pm.collectionVariables.set(\"saveData\", saveData[0])"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/networktemplates",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":org_id",
-								"networktemplates"
-							],
-							"variable": [
-								{
-									"key": "org_id",
-									"value": "{{org_id}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getOrgNetworkTemplateDetails",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/networktemplates/:networktemplate_id",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":org_id",
-								"networktemplates",
-								":networktemplate_id"
-							],
-							"variable": [
-								{
-									"key": "org_id",
-									"value": "{{org_id}}"
-								},
-								{
-									"key": "networktemplate_id",
-									"value": "{{networktemplate_id}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "createOrgNetworkTemplate Copy",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"type": "text",
-								"value": "application/json",
-								"key": "Accept"
-							},
-							{
-								"value": "{{csrftoken}}",
-								"key": "X-CSRFToken",
-								"type": "text"
-							},
-							{
-								"type": "text",
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"xxx\",\n\n    \"networks\": {\n        \"default\": {\n            \"vlan_id\": 1\n        },\n        \"corp\": {\n            \"vlan_id\": 600\n        },\n        \"guest\": {\n            \"vlan_id\": 700\n        },\n        \"mgmt\": {\n            \"vlan_id\": 500\n        }\n    },\n\n    \"radius_config\": {\n        \"auth_servers_timeout\": 5,\n        \"auth_servers_retries\": 3,\n        \"auth_servers\": [\n            {\n                \"host\": \"1.2.3.4\",\n                \"port\": 1812,\n                \"secret\": \"testing123\"\n            },\n            {\n                \"host\": \"radius.internal\",\n                \"port\": 1812,\n                \"secret\": \"testing123\"\n            }\n        ],\n        \"acct_servers\": [\n            {\n                \"host\": \"1.2.3.4\",\n                \"port\": 1812,\n                \"secret\": \"testing123\"\n            }\n        ],\n        \"acct_interim_interval\": 0\n    },\n\n    \"port_usages\": {\n        \"ap\": {\n            \"mode\": \"trunk\",\n            \"stp_edge\": true,\n            \"all_networks\": false,\n            \"networks\": [ \"guest\", \"corp\" ],\n            \"port_network\": \"mgmt\",\n            \"disabled\": false,\n            \"description\": \"WAP\"\n        },\n        \"uplink\": {\n            \"mode\": \"trunk\",\n            \"all_networks\": true,\n            \"stp_edge\": false,\n            \"port_network\": null\n        },\n        \"iot\": {\n            \"mode\": \"access\",\n            \"stp_edge\": true,\n            \"port_network\": \"default\" \n        },\n        \"default\": {\n            \"mode\": \"access\",\n            \"stp_edge\": false,  \n            \"port_network\": \"default\"\n        },\n        \"dynamic\": {\n            \"mode\": \"dynamic\",\n\n            \"rules\": [\n                {\n                    \"src\": \"lldp_system_name\",  \n                    \"expression\": \"[0:3]\",          \n                    \"equals\": \"SENSOR\"  ,\n                    \"usage\": \"iot\"\n                },\n                {\n                    \"src\": \"radius_username\",  \n                    \"expression\": \"[0:3]\",          \n                    \"equals\": \"SENSOR\"  ,\n                    \"usage\": \"iot\"\n                }\n            ]\n        },\n\n        \"user\": {\n            \"mode\": \"access\",\n            \"stp_edge\": true,\n            \"port_auth\": \"dot1x\",\n            \"enable_mac_auth\": false,\n            \"guest_network\": null,\n            \"bypass_auth_when_server_down\": false\n        }\n    },\n\n    \"switch_matching\": {\n        \"enable\": true,\n\n        \"rules\": [\n            {\n                \"name\": \"match by name\",\n                \"match_name[0:3]\": \"abc\",\n                \"match_model\": \"EX4300\",\n\n                \"port_config\": {\n                    \"ge-0/0/0\": {\n                        \"usage\": \"uplink\"\n                    },\n                    \"ge-0/0/8-16,ge-1/0/0-47\": {\n                        \"usage\": \"ap\"\n                    },\n\n                    \"*\": {\n                        \"usage\": \"default\"\n                    }\n                }\n            },\n            {\n                \"name\": \"match by role\",\n                \"match_role\": \"access\",\n\n                \"port_config\": {\n                    \"ge-0/0/0\": {\n                        \"usage\": \"uplink\"\n                    }\n                }\n            }\n        ]\n    }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/networktemplates",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":org_id",
-								"networktemplates"
-							],
-							"variable": [
-								{
-									"key": "org_id",
-									"value": "{{org_id}}"
-								}
-							]
-						},
-						"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nname|string|The name of the RF template\ncountry_code|string|optional, country code to use. If specified, this gets applied to all sites using the RF Template\nmodel_specific|object|overwrites for a specific model. If a band is specified, it will shadow the default.\nchannels|list|list of channels, null or empty array means auto\nbandwidth|int|channel width for the band, 20 / 40 / 80, 80 is only applicable for band_5\npower|int|tx power of the radio, 0 mean auto\npower_min|int|when power=0, min tx power to use, HW-specific values will be used if not set\npower_max|int|when power=0, max tx power to use, HW-specific values will be used if not set\npreamble|string|short / long / auto, default is short"
-					},
-					"response": []
 				}
 			]
 		},
@@ -3250,7 +2791,8 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}"
+											"value": "{{org_id}}",
+											"type": "string"
 										}
 									]
 								},
@@ -3344,11 +2886,13 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}"
+											"value": "{{c_site_id}}",
+											"type": "string"
 										},
 										{
 											"key": "device_id",
-											"value": "{{c_device_id}}"
+											"value": "{{c_device_id}}",
+											"type": "string"
 										}
 									]
 								}
@@ -3480,7 +3024,8 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}"
+											"value": "{{org_id}}",
+											"type": "string"
 										}
 									]
 								},
@@ -3577,11 +3122,13 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}"
+											"value": "{{c_site_id}}",
+											"type": "string"
 										},
 										{
 											"key": "device_id",
-											"value": "{{c_device_id}}"
+											"value": "{{c_device_id}}",
+											"type": "string"
 										}
 									]
 								}
@@ -3712,7 +3259,8 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}"
+											"value": "{{org_id}}",
+											"type": "string"
 										}
 									]
 								},
@@ -3823,11 +3371,13 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}"
+											"value": "{{c_site_id}}",
+											"type": "string"
 										},
 										{
 											"key": "device_id",
-											"value": "{{c_device_id}}"
+											"value": "{{c_device_id}}",
+											"type": "string"
 										}
 									]
 								}
@@ -3893,6 +3443,114 @@
 									""
 								]
 							}
+						}
+					]
+				},
+				{
+					"name": "Device Profiles",
+					"item": [
+						{
+							"name": "getOrgInventory_profiles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"proceedCheck = true",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"if (jsonData.length != 1) {",
+											"        console.log(`Did not find exactly 1 device, Found ${jsonData.length}`)",
+											"        proceedCheck = false",
+											"        };",
+											"pm.test(\"Results length > 0\", function() {",
+											"  pm.expect(jsonData.length).to.equal(1);",
+											"});",
+											"",
+											"",
+											"if (proceedCheck == false){",
+											"     nextRequest = null;",
+											"     postman.setNextRequest(nextRequest);",
+											"};",
+											"",
+											"pm.collectionVariables.set(\"c_device_id\", jsonData[0].id);",
+											"pm.collectionVariables.set(\"c_site_id\", jsonData[0].site_id);",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?mac={{mac_address}}",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"query": [
+										{
+											"key": "mac",
+											"value": "{{mac_address}}"
+										}
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": "{{org_id}}",
+											"type": "string"
+										}
+									]
+								},
+								"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+											"protocol": "https",
+											"host": [
+												"{{hosts}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":org_id",
+												"inventory"
+											],
+											"variable": [
+												{
+													"key": "org_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
+								}
+							]
 						}
 					]
 				}
@@ -3991,7 +3649,8 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}"
+											"value": "{{site_id}}",
+											"type": "string"
 										}
 									]
 								}
@@ -4065,11 +3724,13 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}"
+											"value": "{{site_id}}",
+											"type": "string"
 										},
 										{
 											"key": "device_id",
-											"value": "{{id}}"
+											"value": "{{id}}",
+											"type": "string"
 										}
 									]
 								},
@@ -4127,7 +3788,7 @@
 							]
 						}
 					],
-					"description": "This collection will use a the exported JSON payload of all sites to upgrade all sites that do not match the `desired_ap_version` variable\n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is your Mist organization\n{{desired_ap_version}} This is the version you want the APs upgraded to.\n\n\nPlease make sure you don't have `site_id` or `id` defined in your environment, or it could cause those values to override the collection.",
+					"description": "This collection will use a the exported JSON payload of all sites to upgrade all sites that do not match the `desired_ap_version` variable\n\nTo start, run the `getOrgInventoryAPs - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n`org_id` This is your Mist organization\n`desired_ap_version` This is the version you want the APs upgraded to.\n\nPlease make sure you don't have `site_id` or `id` defined in your environment, or it could cause those values to override the collection.\n\n## TODO\nImplement ability to run via CSV list of APs.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -4187,7 +3848,8 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}"
+									"value": "{{org_id}}",
+									"type": "string"
 								}
 							]
 						},
@@ -4230,7 +3892,6 @@
 					]
 				}
 			],
-			"description": "For each of these bulk actions, you will need to run the \"getOrgInventoryAPs - SendAndDownload\" action first, and perform the send/download.  This will create a json file that contains the AP inventory for runner to iterate through.\n\nRequired Environment Variables:\n{{apitoken}}\n{{org_id}}\n\nPlease note: Make sure you do not have an existing environment variable called `site_id` or `id` or this will supercede the values coming from the collection runner.\n\n\n\n\n",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -4334,14 +3995,6 @@
 			"value": ""
 		},
 		{
-			"key": "country_code",
-			"value": ""
-		},
-		{
-			"key": "c_site_address",
-			"value": ""
-		},
-		{
 			"key": "c_device_id",
 			"value": ""
 		},
@@ -4350,7 +4003,15 @@
 			"value": ""
 		},
 		{
-			"key": "c_site_id",
+			"key": "areYouSure",
+			"value": "false"
+		},
+		{
+			"key": "desired_ap_version",
+			"value": ""
+		},
+		{
+			"key": "c_geocode",
 			"value": ""
 		},
 		{
@@ -4362,15 +4023,27 @@
 			"value": ""
 		},
 		{
-			"key": "formatted_address",
+			"key": "c_site_id",
 			"value": ""
 		},
 		{
-			"key": "areYouSure",
-			"value": "false"
+			"key": "c_rftemplate_id",
+			"value": " "
 		},
 		{
-			"key": "desired_ap_version",
+			"key": "c_secpolicy_id",
+			"value": " "
+		},
+		{
+			"key": "c_alarmtemplate_id",
+			"value": " "
+		},
+		{
+			"key": "c_networktemplate_id",
+			"value": " "
+		},
+		{
+			"key": "c_clone",
 			"value": ""
 		}
 	]

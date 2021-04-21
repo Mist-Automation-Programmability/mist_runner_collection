@@ -3,14 +3,12 @@ This collection provides a number of Mist automation tasks that can be performed
 
 ### Current Tasks include:
 - Site Creation
-- Site Creation with Settings
-- Site Cloning/Creation
 - Inventory Assignment
 - Update Sites(Group):
-  - Firmware Settings
-  - Add Webhook to Sites
   - Generic Site Update (put in whatever site settings you want)
-  - Delete Sites
+  - Set Autoupgrade Firmware
+  - Add Webhook to Sites
+  - Delete Sites (DANGER)
 - Update Devices (Group):
   - Device Naming
   - Device IP
@@ -76,3 +74,10 @@ Instead of requiring a CSV, there is a call called `getSites - Send And Download
 
 ### Inherited Works
 Most of the Mist API calls come from the Thomas Munzer Mist Postman collection.  They have been modified to with additional tests and scripts.
+
+
+## What's new in 0.3.0
+ * Consolidated Site Creation: </br> Site creation has been simplified down into a single workflow that satisfies the requirements of the 3 previous flows (Simple Site, Site Creation with Settings, Site Cloning).
+ 
+ * Update Sites Enhancments: </br>
+ Update sites flows have been enhanced to all either the `Download and Save` method, or CSV sourced flows.  Site Vars are currently the exception to this, and that will be coming in 0.3.1.

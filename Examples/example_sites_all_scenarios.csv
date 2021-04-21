@@ -1,0 +1,12 @@
+site_name,site_address,rftemplate_id,lat,lng,time_zone,country_code,site_template_name,sitegroup_ids,alarmtemplate_id
+SkipGeocoding-Site,"700 W Jefferson St, Boise, ID 83702",,43.6178216,-116.1995185,America/Boise,US,,,
+Cloning-Site,"350 State St, Salt Lake City, UT 84103",,,,,,Jake R Snyder,,
+NormalCreation-Site,"900 Court St NE, Salem, OR 97301",,,,,,,,
+SkipGeocoding-Site,"700 W Jefferson St, Boise, ID 83702",,43.6178216,-116.1995185,America/Boise,US,,,
+NormalCreation-Site,"900 Court St NE, Salem, OR 97301",,,,,,,,
+Washington4,"416 Sid Snyder Avenue SW, Olympia, Washington 98504",,,,,,,,
+''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,
+''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,
+Normal Site with RF Template,"900 Court St NE, Salem, OR 97301",9f65efea-0535-43af-80e5-f9f7d2bb8917,,,,,,,
+Normal Site with SiteGroup,"900 Court St NE, Salem, OR 97301",,,,,,,"[""31d37657-64c7-4e7d-98d2-1b077160b952""]",
+Normal Site with AlarmTemplate,"900 Court St NE, Salem, OR 97301",,,,,,,,4c4e03b2-5774-430f-8c57-6fbd1251f3df

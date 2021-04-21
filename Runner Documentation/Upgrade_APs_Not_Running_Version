@@ -1,0 +1,14 @@
+This collection will use a the exported JSON payload of all sites to upgrade all sites that do not match the `desired_ap_version` variable
+
+To start, run the `getOrgInventoryAPs - Send and Download` to generate a json payload with all sites.
+
+Required Environmental Variables:
+`apitoken` This your Mist dashboard API token.  It should have permissions to create sites
+`org_id` This is your Mist organization
+`desired_ap_version` This is the version you want the APs upgraded to.
+
+Please make sure you don't have `site_id` or `id` defined in your environment, or it could cause those values to override the collection.
+
+## TODO
+Implement ability to run via CSV list of APs.
+
