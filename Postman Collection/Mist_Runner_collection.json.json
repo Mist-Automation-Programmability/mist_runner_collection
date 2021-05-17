@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "f8534122-72a7-4d7e-81ca-3b19771a88f3",
-		"name": "Mist Runner Collections 0.3.0",
+		"name": "Mist Runner Collections 0.3.1",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1636,7 +1636,8 @@
 											"}",
 											"}",
 											"else if (!!pm.iterationData.get(\"id\")) {",
-											"    pm.collection.set(\"c_site_id\", pm.iterationData.get(\"id\"))",
+											"    console.info(\"Found ID Field\")",
+											"    pm.collectionVariables.set(\"c_site_id\", pm.iterationData.get(\"id\"))",
 											"    nextRequest = \"updateSiteSettings - Firmware\"",
 											"};",
 											"",
@@ -1676,6 +1677,7 @@
 											"        pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
 											"    }",
 											"}",
+											"",
 											"console.info(`Site Name = ${pm.collectionVariables.get(\"c_site_name\")}`)"
 										],
 										"type": "text/javascript"
@@ -1778,7 +1780,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"auto_upgrade\": {\n        \"enabled\": true,\n        \"version\": \"custom\",\n        \"time_of_day\": \"02:00\",\n        \"custom_versions\": {\n            \"AP43\": \"0.7.20216\",\n            \"AP41\": \"0.7.20216\"\n        },\n        \"day_of_week\": \"sun\"\n    }\n}",
+									"raw": "{\n    \"auto_upgrade\": {\n        \"enabled\": true,\n        \"version\": \"custom\",\n        \"time_of_day\": \"02:00\",\n        \"custom_versions\": {\n            \"AP43\": \"0.8.21602\",\n            \"AP41\": \"0.8.21602\",\n            \"AP33\": \"0.8.21602\",\n            \"AP12\": \"0.8.21602\"\n        },\n        \"day_of_week\": \"sun\"\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4044,6 +4046,10 @@
 		},
 		{
 			"key": "c_clone",
+			"value": ""
+		},
+		{
+			"key": "c_site_name",
 			"value": ""
 		}
 	]
