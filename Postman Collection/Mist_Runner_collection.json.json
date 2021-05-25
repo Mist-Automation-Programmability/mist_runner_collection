@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "f8534122-72a7-4d7e-81ca-3b19771a88f3",
-		"name": "Mist Runner Collections 0.3.1",
+		"name": "Mist Runner Collections 0.3.2",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -3582,59 +3582,305 @@
 			"name": "Troubleshooting - Via Send/Download",
 			"item": [
 				{
-					"name": "Upgrade APs Not Running Version",
+					"name": "Site Troubleshooting",
 					"item": [
 						{
-							"name": "getSiteDeviceStatsDetailsUpgrade",
-							"event": [
+							"name": "Find Out of Compliance APs",
+							"item": [
 								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"var jsonData = JSON.parse(responseBody);",
-											"proceedCheck = true",
-											"",
-											"pm.test(\"Status code is 200\", function() {",
-											"  pm.expect(pm.response.code).to.equal(200);",
-											"});",
-											"",
-											"var desVersion = pm.collectionVariables.get(\"desired_ap_version\")",
-											"if (desVersion === \"\") {",
-											"    desVersion = pm.variables.get(\"desired_ap_version\")",
-											"    console.log(\"falling back to environment\")",
-											"}",
-											"pm.test(\"desired_ap_version set\", function() {",
-											"  pm.expect(desVersion).to.include(\".\");",
-											"});",
-											"if (desVersion.startsWith(\".\")) {",
-											"        console.log(`desired_ap_version does not appear set`)",
-											"        proceedCheck = false",
-											"        };",
-											"",
-											"",
-											"pm.test(\"AP NOT on Current Version.\", function() {",
-											"  pm.expect(jsonData.version).to.not.equal(desVersion);",
-											"});",
-											"",
-											"if (jsonData.version == desVersion) {",
-											"        proceedCheck = false;",
-											"        };",
-											"",
-											"if (proceedCheck == false){",
-											"     nextRequest = null;",
-											"     postman.setNextRequest(nextRequest);",
-											"};",
-											""
-										],
-										"type": "text/javascript"
-									}
+									"name": "getSiteIDByName_compliance",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"console.log(`Starting Site ${pm.iterationData.get(\"site_name\")}`)",
+													"var nextRequest = null",
+													"var jsonData = JSON.parse(responseBody);",
+													"",
+													"",
+													"",
+													"if (!!pm.collectionVariables.get(\"c_site_name\")) {",
+													"    console.info(`searching for site ${pm.collectionVariables.get(\"c_site_name\")} `);",
+													"    for (var i = 0; i < jsonData.length; i++) {",
+													"    if (jsonData[i].name == pm.collectionVariables.get(\"c_site_name\")) {",
+													"        pm.collectionVariables.set(\"c_site_id\", jsonData[i].id)",
+													"        console.info(\"Found Site\")",
+													"        console.info(`Site ID = ${pm.collectionVariables.get(\"c_site_id\")}`)",
+													"        nextRequest = \"getSiteSettings_compliance\"",
+													"        }",
+													"}",
+													"}",
+													"else if (!!pm.iterationData.get(\"id\")) {",
+													"    console.info(\"Found ID Field\")",
+													"    pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"name\"))",
+													"    pm.collectionVariables.set(\"c_site_id\", pm.iterationData.get(\"id\"))",
+													"    nextRequest = \"getSiteSettings_compliance\"",
+													"};",
+													"",
+													"pm.test(\"Status code is 200\", function() {",
+													"  pm.expect(pm.response.code).to.equal(200);",
+													"});",
+													"",
+													"pm.test(\"site_id is set\", function() {",
+													"  pm.expect(!!pm.collectionVariables.get(\"c_site_id\"));",
+													"});",
+													"",
+													"console.log(`setting next request ${nextRequest}`);",
+													"postman.setNextRequest(nextRequest);"
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// Ensure all collection variables are removed before running.",
+													"pm.collectionVariables.unset(\"c_site_name\");",
+													"pm.collectionVariables.unset(\"c_site_id\");",
+													"pm.collectionVariables.unset(\"c_site_versions\")",
+													"",
+													"//Handling of digit only sites with quotes.",
+													"var formatted_string = pm.iterationData.get(\"site_name\")",
+													"if (!!pm.iterationData.get(\"site_name\")) {",
+													"    if (formatted_string.includes(\"\\'\") || formatted_string.includes(\"\\\"\")) {",
+													"        console.info(\"stripping formatting of site_name\")",
+													"        formatted_string = formatted_string.replace(/'/g, \"\");",
+													"        formatted_string = formatted_string.replace(/\"/g, \"\");",
+													"        console.log(`Formatted Name ${formatted_string}`);",
+													"        pm.collectionVariables.set(\"c_site_name\", formatted_string)",
+													"    }",
+													"    else {",
+													"        pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
+													"    }",
+													"}",
+													"",
+													"console.info(`Site Name = ${pm.collectionVariables.get(\"c_site_name\")}`)"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":org_id",
+												"sites"
+											],
+											"variable": [
+												{
+													"key": "org_id",
+													"value": "{{org_id}}"
+												}
+											]
+										}
+									},
+									"response": [
+										{
+											"name": "ok",
+											"originalRequest": {
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "",
+													"variable": [
+														{
+															"key": "orgr_id",
+															"value": ""
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [],
+											"cookie": [],
+											"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+										}
+									]
+								},
+								{
+									"name": "getSiteSettings_compliance",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var nextRequest = null",
+													"var jsonData = JSON.parse(responseBody);",
+													"",
+													"console.warn(`Starting Site: ${pm.collectionVariables.get(\"c_site_name\")}`)",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"Custom Versions are Defined\", function () {",
+													"    pm.expect(\"custom_versions\" in jsonData['auto_upgrade']);",
+													"});",
+													"",
+													"if (\"custom_versions in jsonData['auto_upgrade\") {",
+													"    pm.collectionVariables.set(\"c_site_versions\", jsonData['auto_upgrade']['custom_versions']);",
+													"    nextRequest = \"getDeviceStats_compliance\"",
+													"}",
+													"",
+													"postman.setNextRequest(nextRequest);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"sites",
+												":site_id",
+												"setting"
+											],
+											"variable": [
+												{
+													"key": "site_id",
+													"value": "{{c_site_id}}",
+													"type": "string"
+												}
+											]
+										}
+									},
+									"response": [
+										{
+											"name": "GET - Site settings",
+											"originalRequest": {
+												"method": "GET",
+												"header": [],
+												"url": {
+													"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
+													"protocol": "https",
+													"host": [
+														"{{host}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"sites",
+														":site_id",
+														"setting"
+													],
+													"variable": [
+														{
+															"key": "site_id"
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [],
+											"cookie": [],
+											"body": "{\n    \"rtsa\": {\n        \"enabled\": false,\n        \"app_waking\": false,\n        \"disable_pressure_sensor\": false,\n        \"disable_dead_reckoning\": false,\n        \"track_asset\": false\n    },\n    \"wifi\": {\n        \"enabled\": true,\n        \"mesh_enabled\": true,\n        \"cisco_enabled\": true,\n        \"proxy_arp\": \"default\",\n        \"enable_arp_spoof_check\": false,\n        \"locate_connected\": false,\n        \"locate_unconnected\": false,\n        \"enable_shared_radio_scanning\": false,\n        \"disable_11k\": false,\n        \"disable_radios_when_power_constrained\": false,\n        \"enable_vna\": false\n    },\n    \"persist_config_on_device\": false,\n    \"device_updown_threshold\": 0,\n    \"radio_config\": {\n        \"band_24\": {\n            \"disabled\": false,\n            \"channels\": [\n                1,\n                6,\n                11\n            ],\n            \"bandwidth\": 20,\n            \"power\": 16\n        },\n        \"band_5\": {\n            \"disabled\": false,\n            \"channels\": null,\n            \"bandwidth\": 40,\n            \"power\": 0,\n            \"preamble\": \"short\",\n            \"power_min\": 10,\n            \"power_max\": 18\n        },\n        \"ant_gain_24\": 7,\n        \"ant_gain_5\": 4,\n        \"model_specific\": {\n            \"AP61\": {\n                \"band_5\": {\n                    \"disabled\": false,\n                    \"channels\": [\n                        100,\n                        104\n                    ],\n                    \"bandwidth\": 40,\n                    \"power\": 0\n                },\n                \"ant_gain_24\": 4,\n                \"ant_gain_5\": 5\n            },\n            \"AP43\": {\n                \"band_24_usage\": \"5\"\n            }\n        }\n    },\n    \"enable_channel_144\": false,\n    \"mesh\": {\n        \"secret\": \"K5vBXtfrI67YJW3bkhRXjstlgozVkBmHcgPEtN9ADBm3LRe5VjsrXCS9Imkm1Vm\"\n    },\n    \"rogue\": {\n        \"enabled\": false,\n        \"honeypot_enabled\": true,\n        \"min_rssi\": -80,\n        \"min_duration\": 10,\n        \"whitelisted_ssids\": [\n            \"NeighborSSID\"\n        ],\n        \"whitelisted_bssids\": [\n            \"cc-8e-6f-d4-bf-16\",\n            \"cc-8e-6f-d4-bf-16\"\n        ]\n    },\n    \"led\": {\n        \"enabled\": true,\n        \"brightness\": 255\n    },\n    \"vars\": {\n        \"RADIUS_SECRET\": \"11s64632d\",\n        \"RADIUS_IP1\": \"172.31.2.5\",\n        \"DYNAMIC_VLANS\": \"{\\\"enabled\\\": true,\\\"type\\\": \\\"airespace-interface-name\\\",\\\"vlans\\\":{\\\"131\\\": \\\"default\\\",\\\"322\\\": \\\"fast,video\\\"}\\\"default_vlan_id\\\": 999,\\\"local_vlan_ids\\\": []}\"\n    },\n    \"auto_upgrade\": {\n        \"enabled\": true,\n        \"version\": \"beta\",\n        \"time_of_day\": \"12:00\",\n        \"day_of_week\": \"sun\",\n        \"custom_versions\": {\n            \"AP41\": \"0.1.5135\",\n            \"AP61\": \"0.1.7215\",\n            \"AP21\": \"stable\"\n        }\n    },\n    \"status_portal\": {\n        \"enabled\": true,\n        \"hostnames\": [\n            \"my.misty.com\"\n        ]\n    },\n    \"remote_syslog\": {\n        \"enabled\": true,\n        \"servers\": [\n            {\n                \"host\": \"syslogd.internal\",\n                \"port\": 514,\n                \"protocol\": \"udp\",\n                \"facility\": \"config\",\n                \"severity\": \"info\",\n                \"tag\": \"\"\n            }\n        ]\n    },\n    \"ntp_servers\": [\n        \"pool.ntp.org\"\n    ],\n    \"ip_config\": {\n        \"dns\": [\n            \"8.8.8.8\"\n        ],\n        \"dns_suffix\": [\n            \".mist.local\"\n        ]\n    },\n    \"engagement\": {\n        \"dwell_tags\": {\n            \"passerby\": null,\n            \"bounce\": null,\n            \"engaged\": \"300-14400\",\n            \"stationed\": \"14400-43200\"\n        },\n        \"max_dwell\": 43200,\n        \"hours\": {\n            \"mon\": \"09:00-17:00\",\n            \"fri\": \"09:00-17:00\"\n        },\n        \"dwell_tag_names\": {\n            \"passerby\": \"Passer By\",\n            \"bounce\": \"Bounce\",\n            \"engaged\": \"Engaged\",\n            \"stationed\": \"Stationed\"\n        }\n    },\n    \"analytic\": {\n        \"enabled\": false\n    },\n    \"flags\": {\n        \"way1\": 3,\n        \"way2\": 0,\n        \"teleport\": false\n    },\n    \"ble_config\": {\n        \"power_mode\": \"custom\",\n        \"power\": 10,\n        \"beacon_enabled\": true,\n        \"beacon_rate_mode\": \"custom\",\n        \"beacon_rate\": 3,\n        \"beam_disabled\": [\n            1,\n            3,\n            6\n        ],\n        \"ibeacon_enabled\": true,\n        \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n        \"ibeacon_major\": 13,\n        \"ibeacon_minor\": 138,\n        \"ibeacon_adv_power\": -65,\n        \"ibeacon_beams\": \"2-4,7\",\n        \"eddystone_uid_enabled\": false,\n        \"eddystone_uid_namespace\": \"2818e3868dec25629ede\",\n        \"eddystone_uid_instance\": \"5c5b35000001\",\n        \"eddystone_uid_freq_msec\": 200,\n        \"eddystone_uid_adv_power\": -65,\n        \"eddystone_uid_beams\": \"2-4,7\",\n        \"eddystone_url_enabled\": false,\n        \"eddystone_url_url\": \"https://www.abc.com\",\n        \"eddystone_url_freq_msec\": 1000,\n        \"eddystone_url_adv_power\": -65,\n        \"eddystone_url_beams\": \"2-4,7\"\n    },\n    \"wids\": {\n        \"repeated_auth_failures\": {\n            \"threshold\": 4,\n            \"duration\": 60\n        }\n    },\n    \"proxy\": {\n        \"url\": \"http://proxy.internal:8080/\"\n    },\n    \"ssh_keys\": [\n        \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAA...Wxa6p6UW0ZbcP john@host\"\n    ],\n    \"mxtunnel\": {\n        \"enabled\": false,\n        \"vlan_ids\": [\n            3,\n            5,\n            6\n        ],\n        \"ap_subnets\": \"0.0.0.0/0\",\n        \"protocol\": \"udp\",\n        \"mtu\": 1100,\n        \"clusters\": [\n            {\n                \"name\": \"primary\",\n                \"tunterm_hosts\": [\n                    \"mxedge1\",\n                    \"mxedge2.local\"\n                ]\n            }\n        ],\n        \"hello_interval\": 60,\n        \"hello_retries\": 3,\n        \"radsec\": {\n            \"enabled\": true,\n            \"auth_servers\": [\n                {\n                    \"host\": \"1.2.3.4\",\n                    \"port\": 1812,\n                    \"secret\": \"testing123\"\n                },\n                {\n                    \"host\": \"radius.internal\",\n                    \"port\": 1812,\n                    \"secret\": \"testing123\"\n                }\n            ],\n            \"acct_servers\": [\n                {\n                    \"host\": \"1.2.3.4\",\n                    \"port\": 1812,\n                    \"secret\": \"testing123\"\n                }\n            ]\n        }\n    }\n}"
+										}
+									]
+								},
+								{
+									"name": "getDeviceStats_compliance",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = JSON.parse(responseBody);",
+													"proceedCheck = true",
+													"ap_versions = pm.collectionVariables.get(\"c_site_versions\")",
+													"",
+													"pm.test(\"Status code is 200\", function() {",
+													"  pm.expect(pm.response.code).to.equal(200);",
+													"});",
+													"",
+													"for (var i = 0; i < jsonData.length; i++) {",
+													"    var ap_version = jsonData[i]['version']",
+													"    var ap_model = jsonData[i]['model']",
+													"    var ap_name = jsonData[i]['name']",
+													"    pm.test(`${ap_name} running version ${ap_versions[ap_model]}`, function() {",
+													"        pm.expect(ap_version).to.equal(ap_versions[ap_model]);",
+													"    });",
+													"    if (ap_version != ap_versions[ap_model]) {",
+													"        console.error(`${ap_name}: ${ap_version} Site: ${ap_versions[ap_model]}`)",
+													"    }",
+													"",
+													"}"
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{host}}/api/v1/sites/:site_id/stats/devices",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"sites",
+												":site_id",
+												"stats",
+												"devices"
+											],
+											"variable": [
+												{
+													"key": "site_id",
+													"value": "{{c_site_id}}",
+													"type": "string"
+												}
+											]
+										}
+									},
+									"response": []
 								}
 							],
+							"description": "This collection will iterate through sites and check the AP `version` for what is defined in the site settings and check the APs for the site to make sure they are running the correct version.  It will fail a test and log an ERROR to the console for each AP that is not in compliance.\n\nYou can source the data from a CSV with `site_name`, or you can run the `getSites - Send and Download` to generate a json payload with all sites.\n\n## Required Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n\n`org_id` for some of the site existing verification, we need the org_id.\n\n## Logical details:\n * getSiteIDByName: This call is required as we use this to verify the site exists, and handle a lot of the checks based on which values get passed in (CSV vs json).\n * getSiteSettings: This gets the details of the site_settings and pulls the `auto_upgrade['custom_versions']` for lookup in future steps.\n * getDeviceStats_compliance: This call pulls the site device stats and iterates through each AP.  Then it compares the APs model and version to the version defined in the Site Settings."
+						},
+						{
+							"name": "getSites - Send And Download Copy",
 							"request": {
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "https://{{host}}/api/v1/sites/:site_id/stats/devices/{{id}}",
+									"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
 									"protocol": "https",
 									"host": [
 										"{{host}}"
@@ -3642,111 +3888,169 @@
 									"path": [
 										"api",
 										"v1",
-										"sites",
-										":site_id",
-										"stats",
-										"devices",
-										"{{id}}"
+										"orgs",
+										":org_id",
+										"sites"
 									],
 									"variable": [
 										{
-											"key": "site_id",
-											"value": "{{site_id}}",
-											"type": "string"
+											"key": "org_id",
+											"value": "{{org_id}}"
 										}
 									]
 								}
-							},
-							"response": []
-						},
-						{
-							"name": "upgradeSiteDevice",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"var jsonData = JSON.parse(responseBody);",
-											"pm.test(\"Status code is 200\", function() {",
-											"  pm.expect(pm.response.code).to.equal(200);",
-											"});",
-											"",
-											"pm.test(\"Response status is starting\", function() {",
-											"  pm.expect(jsonData.status).to.equal(\"starting\");",
-											"});",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "Accept",
-										"value": "application/json",
-										"type": "text"
-									},
-									{
-										"key": "X-CSRFToken",
-										"value": "{{csrftoken}}",
-										"type": "text"
-									},
-									{
-										"key": "Content-Type",
-										"value": "application/json",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"version\": \"{{desired_ap_version}}\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id/upgrade",
-									"protocol": "https",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"sites",
-										":site_id",
-										"devices",
-										":device_id",
-										"upgrade"
-									],
-									"variable": [
-										{
-											"key": "site_id",
-											"value": "{{site_id}}",
-											"type": "string"
-										},
-										{
-											"key": "device_id",
-											"value": "{{id}}",
-											"type": "string"
-										}
-									]
-								},
-								"description": " #### Body Parameters\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n version|string|default is stable\r\n \r\n  #### Body Response\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n timestamp|float|timestamp\r\n status|string|starting / inprogress / success / error / scheduled\r\n status_id|int|the internal status id"
 							},
 							"response": [
 								{
-									"name": "Upgrade - Device",
+									"name": "ok",
 									"originalRequest": {
-										"method": "POST",
+										"method": "GET",
 										"header": [],
+										"url": {
+											"raw": "",
+											"variable": [
+												{
+													"key": "orgr_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Device Troubleshooting",
+					"item": [
+						{
+							"name": "Upgrade APs Not Running Version",
+							"item": [
+								{
+									"name": "getSiteDeviceStatsDetailsUpgrade",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = JSON.parse(responseBody);",
+													"proceedCheck = true",
+													"",
+													"pm.test(\"Status code is 200\", function() {",
+													"  pm.expect(pm.response.code).to.equal(200);",
+													"});",
+													"",
+													"var desVersion = pm.collectionVariables.get(\"desired_ap_version\")",
+													"if (desVersion === \"\") {",
+													"    desVersion = pm.variables.get(\"desired_ap_version\")",
+													"    console.log(\"falling back to environment\")",
+													"}",
+													"pm.test(\"desired_ap_version set\", function() {",
+													"  pm.expect(desVersion).to.include(\".\");",
+													"});",
+													"if (desVersion.startsWith(\".\")) {",
+													"        console.log(`desired_ap_version does not appear set`)",
+													"        proceedCheck = false",
+													"        };",
+													"",
+													"",
+													"pm.test(\"AP NOT on Current Version.\", function() {",
+													"  pm.expect(jsonData.version).to.not.equal(desVersion);",
+													"});",
+													"",
+													"if (jsonData.version == desVersion) {",
+													"        proceedCheck = false;",
+													"        };",
+													"",
+													"if (proceedCheck == false){",
+													"     nextRequest = null;",
+													"     postman.setNextRequest(nextRequest);",
+													"};",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{host}}/api/v1/sites/:site_id/stats/devices/{{id}}",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"sites",
+												":site_id",
+												"stats",
+												"devices",
+												"{{id}}"
+											],
+											"variable": [
+												{
+													"key": "site_id",
+													"value": "{{site_id}}",
+													"type": "string"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "upgradeSiteDevice",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = JSON.parse(responseBody);",
+													"pm.test(\"Status code is 200\", function() {",
+													"  pm.expect(pm.response.code).to.equal(200);",
+													"});",
+													"",
+													"pm.test(\"Response status is starting\", function() {",
+													"  pm.expect(jsonData.status).to.equal(\"starting\");",
+													"});",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "X-CSRFToken",
+												"value": "{{csrftoken}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"version\": \"3.1.5\"\n}",
+											"raw": "{\n    \"version\": \"{{desired_ap_version}}\"\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -3771,10 +4075,159 @@
 											"variable": [
 												{
 													"key": "site_id",
-													"value": ""
+													"value": "{{site_id}}",
+													"type": "string"
 												},
 												{
 													"key": "device_id",
+													"value": "{{id}}",
+													"type": "string"
+												}
+											]
+										},
+										"description": " #### Body Parameters\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n version|string|default is stable\r\n \r\n  #### Body Response\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n timestamp|float|timestamp\r\n status|string|starting / inprogress / success / error / scheduled\r\n status_id|int|the internal status id"
+									},
+									"response": [
+										{
+											"name": "Upgrade - Device",
+											"originalRequest": {
+												"method": "POST",
+												"header": [],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"version\": \"3.1.5\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id/upgrade",
+													"protocol": "https",
+													"host": [
+														"{{host}}"
+													],
+													"path": [
+														"api",
+														"v1",
+														"sites",
+														":site_id",
+														"devices",
+														":device_id",
+														"upgrade"
+													],
+													"variable": [
+														{
+															"key": "site_id",
+															"value": ""
+														},
+														{
+															"key": "device_id",
+															"value": ""
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [],
+											"cookie": [],
+											"body": "{\n    \"timestamp\": 1428949501,\n    \"status\": \"inprogress\",\n    \"status_id\": 5\n}"
+										}
+									]
+								}
+							],
+							"description": "This collection will use a the exported JSON payload of all sites to upgrade all sites that do not match the `desired_ap_version` variable\n\nTo start, run the `getOrgInventoryAPs - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n`org_id` This is your Mist organization\n`desired_ap_version` This is the version you want the APs upgraded to.\n\nPlease make sure you don't have `site_id` or `id` defined in your environment, or it could cause those values to override the collection.\n\n## TODO\nImplement ability to run via CSV list of APs.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "getOrgInventoryAPs - SendAndDownload",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?type=ap",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "ap"
+										}
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": "{{org_id}}",
+											"type": "string"
+										}
+									]
+								},
+								"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+											"protocol": "https",
+											"host": [
+												"{{hosts}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":org_id",
+												"inventory"
+											],
+											"variable": [
+												{
+													"key": "org_id",
 													"value": ""
 												}
 											]
@@ -3785,111 +4238,9 @@
 									"_postman_previewlanguage": "json",
 									"header": [],
 									"cookie": [],
-									"body": "{\n    \"timestamp\": 1428949501,\n    \"status\": \"inprogress\",\n    \"status_id\": 5\n}"
+									"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
 								}
 							]
-						}
-					],
-					"description": "This collection will use a the exported JSON payload of all sites to upgrade all sites that do not match the `desired_ap_version` variable\n\nTo start, run the `getOrgInventoryAPs - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n`org_id` This is your Mist organization\n`desired_ap_version` This is the version you want the APs upgraded to.\n\nPlease make sure you don't have `site_id` or `id` defined in your environment, or it could cause those values to override the collection.\n\n## TODO\nImplement ability to run via CSV list of APs.",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									""
-								]
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									""
-								]
-							}
-						}
-					]
-				},
-				{
-					"name": "getOrgInventoryAPs - SendAndDownload",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?type=ap",
-							"protocol": "https",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"orgs",
-								":org_id",
-								"inventory"
-							],
-							"query": [
-								{
-									"key": "type",
-									"value": "ap"
-								}
-							],
-							"variable": [
-								{
-									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
-								}
-							]
-						},
-						"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
-					},
-					"response": [
-						{
-							"name": "OK",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
-									"protocol": "https",
-									"host": [
-										"{{hosts}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"orgs",
-										":org_id",
-										"inventory"
-									],
-									"variable": [
-										{
-											"key": "org_id",
-											"value": ""
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [],
-							"cookie": [],
-							"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
 						}
 					]
 				}
@@ -4050,6 +4401,10 @@
 		},
 		{
 			"key": "c_site_name",
+			"value": ""
+		},
+		{
+			"key": "c_site_versions",
 			"value": ""
 		}
 	]
