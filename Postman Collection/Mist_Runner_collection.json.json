@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "f8534122-72a7-4d7e-81ca-3b19771a88f3",
-		"name": "Mist Runner Collections 0.3.2",
+		"name": "Mist Runner Collections 0.3.3",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1339,7 +1339,6 @@
 											"// Ensure all collection variables are removed before running.",
 											"pm.collectionVariables.unset(\"c_site_name\");",
 											"pm.collectionVariables.unset(\"c_site_id\");",
-											"",
 											"//Handling of digit only sites with quotes.",
 											"var formatted_string = pm.iterationData.get(\"site_name\")",
 											"if (!!pm.iterationData.get(\"site_name\")) {",
@@ -1354,6 +1353,9 @@
 											"        pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
 											"    }",
 											"}",
+											"else if (!!pm.iterationData.get(\"name\")) {",
+											"    pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"name\"))",
+											"    }",
 											"console.info(`Site Name = ${pm.collectionVariables.get(\"c_site_name\")}`)"
 										],
 										"type": "text/javascript"
@@ -1481,6 +1483,315 @@
 						}
 					],
 					"description": "This collection will iterate through sites and set the payload to the settings you define in the `updateSiteSettings - Generic` API call\n\nYou can source the data from a CSV with `site_name`, or you can run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to modify sites\n\n## Required:\n\nEdit the payload of `updateSiteSettings - Generic` to specify the firmware settings you want.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Site Templates",
+					"item": [
+						{
+							"name": "getSiteIDByName_Templates",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"console.log(`Starting Site ${pm.iterationData.get(\"site_name\")}`)",
+											"var nextRequest = null",
+											"var foundDup = false",
+											"var jsonData = JSON.parse(responseBody);",
+											"",
+											"",
+											"",
+											"if (!!pm.collectionVariables.get(\"c_site_name\")) {",
+											"    console.info(`searching for site ${pm.collectionVariables.get(\"c_site_name\")} `);",
+											"    for (var i = 0; i < jsonData.length; i++) {",
+											"    if (jsonData[i].name == pm.collectionVariables.get(\"c_site_name\")) {",
+											"        pm.collectionVariables.set(\"c_site_id\", jsonData[i].id)",
+											"        console.info(\"Found Site\")",
+											"        console.info(`Site ID = ${pm.collectionVariables.get(\"c_site_id\")}`)",
+											"        nextRequest = \"updateSite_Templates\"",
+											"        }",
+											"}",
+											"}",
+											"else if (!!pm.iterationData.get(\"id\")) {",
+											"    pm.collection.set(\"c_site_id\", pm.iterationData.get(\"id\"))",
+											"    nextRequest = \"updateSite_Templates\"",
+											"};",
+											"",
+											"var template_data = {}",
+											"",
+											"",
+											"if(!!pm.iterationData.get(\"networktemplate_id\")){",
+											"    template_data[\"networktemplate_id\"] = pm.iterationData.get(\"networktemplate_id\");",
+											"};",
+											"if(!!pm.iterationData.get(\"alarmtemplate_id\")){",
+											"    template_data[\"alarmtemplate_id\"] = pm.iterationData.get(\"alarmtemplate_id\");",
+											"};",
+											"if(!!pm.iterationData.get(\"rftemplate_id\")){",
+											"    template_data[\"rftemplate_id\"] = pm.iterationData.get(\"rftemplate_id\");",
+											"};",
+											"if(!!pm.iterationData.get(\"secpolicy_id\")){",
+											"    template_data[\"secpolicy_id\"] = pm.iterationData.get(\"secpolicy_id\");",
+											"};",
+											"",
+											"pm.collectionVariables.set(\"c_site_template_settings\", JSON.stringify(template_data))",
+											"",
+											"console.info(JSON.stringify(pm.collectionVariables.get(\"c_site_template_settings\")))",
+											"",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"",
+											"",
+											"",
+											"console.log(`setting next request ${nextRequest}`);",
+											"postman.setNextRequest(nextRequest);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Ensure all collection variables are removed before running.",
+											"pm.collectionVariables.unset(\"c_site_name\");",
+											"pm.collectionVariables.unset(\"c_site_id\");",
+											"//Handling of digit only sites with quotes.",
+											"var formatted_string = pm.iterationData.get(\"site_name\")",
+											"if (!!pm.iterationData.get(\"site_name\")) {",
+											"    if (formatted_string.includes(\"\\'\") || formatted_string.includes(\"\\\"\")) {",
+											"        console.info(\"stripping formatting of site_name\")",
+											"        formatted_string = formatted_string.replace(/'/g, \"\");",
+											"        formatted_string = formatted_string.replace(/\"/g, \"\");",
+											"        console.log(`Formatted Name ${formatted_string}`);",
+											"        pm.collectionVariables.set(\"c_site_name\", formatted_string)",
+											"    }",
+											"    else {",
+											"        pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
+											"    }",
+											"}",
+											"else if (!!pm.iterationData.get(\"name\")) {",
+											"    pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"name\"))",
+											"    }",
+											"console.info(`Site Name = ${pm.collectionVariables.get(\"c_site_name\")}`)"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":orgr_id",
+										"sites"
+									],
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": "{{org_id}}",
+											"type": "string"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "ok",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "",
+											"variable": [
+												{
+													"key": "orgr_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"Mist Office\",\n        \"timezone\": \"America/Los_Angeles\",\n        \"country_code\": \"US\",\n        \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n        \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n        \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n        \"latlng\": {\n            \"lat\": 37.295833,\n            \"lng\": -122.032946\n        },\n        \"sitegroup_ids\": [\n            \"581328b6-e382-f54e-c9dc-999983183a34\",\n            \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n        ],\n        \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "updateSite_Templates",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var nextRequest = null;",
+											"let jsonData = pm.response.json();",
+											"",
+											"if (!!pm.iterationData.get(\"rftemplate_id\")){",
+											"    pm.test(\"rf_template_id is set\", function() {",
+											"        pm.expect(pm.iterationData.get(\"rftemplate_id\")).to.equal(jsonData['rftemplate_id']);",
+											"    });",
+											"}",
+											"if (!!pm.iterationData.get(\"networktemplate_id\")){",
+											"    pm.test(\"networktemplate_id is set\", function() {",
+											"        pm.expect(pm.iterationData.get(\"networktemplate_id\")).to.equal(jsonData['networktemplate_id']);",
+											"    });",
+											"}",
+											"if (!!pm.iterationData.get(\"alarmtemplate_id\")){",
+											"    pm.test(\"alarmtemplate_id is set\", function() {",
+											"        pm.expect(pm.iterationData.get(\"alarmtemplate_id\")).to.equal(jsonData['alarmtemplate_id']);",
+											"    });",
+											"}",
+											"if (!!pm.iterationData.get(\"secpolicy_id\")){",
+											"    pm.test(\"secpolicy_id is set\", function() {",
+											"        pm.expect(pm.iterationData.get(\"secpolicy_id\")).to.equal(jsonData['secpolicy_id']);",
+											"    });",
+											"}",
+											"",
+											"",
+											"",
+											"console.info(\"Updated site: \" + jsonData.name);",
+											"postman.setNextRequest(nextRequest);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"accept-encoding": true,
+									"connection": true,
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{c_site_template_settings}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{c_site_id}}"
+										}
+									]
+								},
+								"description": "#### Body Parameters\n**Parameter**|**Type**|**Description** \n:-------------: |:-------------: |:-------------: \nname|string|Required. The name of the site\ntimezone|string|Timezone the site is at\ncountry_code|string|country code for the site (for AP config generation), in two-character\nlatlng|latlng|site location\naddress|string|full address of the site\nlat|float|latitude\nlng|float|longitude\nsitegroup_ids|list|sitegroups this site belongs to\nrftemplate_id|string|RF Template ID, this takes precedence over Site Settings\nsecpolicy_id|string|SecPolicy ID\nalarmtemplate_id|string|Alarm Template ID, this takes precedence over the Org-level alarmtemplate_id"
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"rftemplate_id\": \"bb8a9017-1e36-5d6c-6f2b-551abe8a76a2\",\n    \"secpolicy_id\": \"3bcd0beb-5d0a-4cbd-92c1-14aea91e98ef\",\n    \"alarmtemplate_id\": \"684dfc5c-fe77-2290-eb1d-ef3d677fe168\",\n\n    \"latlng\": { \"lat\": 37.295833, \"lng\": -122.032946 },\n    \"sitegroup_ids\": [ \"581328b6-e382-f54e-c9dc-999983183a34\", \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\" ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "https://{{host}}/api/v1/orgs/:org_id/sites",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":org_id",
+												"sites"
+											],
+											"variable": [
+												{
+													"key": "org_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "{\n    \"id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n    \"name\": \"Mist Office\",\n    \"timezone\": \"America/Los_Angeles\",\n    \"country_code\": \"US\",\n    \"latlng\": {\n        \"lat\": 37.295833,\n        \"lng\": -122.032946\n    },\n    \"sitegroup_ids\": [\n        \"581328b6-e382-f54e-c9dc-999983183a34\",\n        \"f57096b9-0c2f-4df6-c77b-ae6ae87a3d43\"\n    ],\n    \"address\": \"1601 S. Deanza Blvd., Cupertino, CA, 95014\"\n}"
+								}
+							]
+						}
+					],
+					"description": "This collection will iterate through site objects in the org and set templates defined in the template.\n\nFor site, please use the `site_name` field.  for the remaining fields, use their respective IDs\n`networktemplate_id`\n`alarmttemplate_id`\n`rftemplate_id`\n\nThere is currently not support for the template name, you will need the ID for the templates.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to modify sites\n\n\nExamples CSV:\n```csv\nsite_name,rftemplate_id,networktemplate_id,alarmtemplate_id,secpolicy_id\nIDA,xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,,,\n\n```",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -4405,6 +4716,10 @@
 		},
 		{
 			"key": "c_site_versions",
+			"value": ""
+		},
+		{
+			"key": "c_site_template_settings",
 			"value": ""
 		}
 	]
