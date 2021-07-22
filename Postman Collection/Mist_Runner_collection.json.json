@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "f8534122-72a7-4d7e-81ca-3b19771a88f3",
-		"name": "Mist Runner Collections 0.3.3",
+		"_postman_id": "499a6c92-3df7-4ed6-9cf7-fd2e06869b9d",
+		"name": "Mist Runner Collections 0.3.7",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -182,8 +182,7 @@
 							"variable": [
 								{
 									"key": "orgr_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						}
@@ -387,8 +386,7 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						}
@@ -464,8 +462,7 @@
 							"variable": [
 								{
 									"key": "site_id",
-									"value": "{{c_site_template_id}}",
-									"type": "string"
+									"value": "{{c_site_template_id}}"
 								}
 							]
 						}
@@ -723,7 +720,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"{{c_site_name}}\",\n    \"timezone\": \"{{c_time_zone}}\",\n    \"country_code\": \"{{c_country_code}}\",\n    \"latlng\": {\n        \"lat\": \"{{c_lat}}\",\n        \"lng\": \"{{c_lng}}\"\n    },\n    \"address\": \"{{formatted_address}}\",\n    \"sitegroup_ids\": {{c_sitegroup_ids}},\n    \"rftemplate_id\": \"{{c_rftemplate_id}}\",\n    \"secpolicy_id\": \"{{c_secpolicy_id}}\",\n    \"alarmtemplate_id\": \"{{c_alarmtemplate_id}}\",\n    \"networktemplate_id\": \"{{c_networktemplate_id}}\"\n}",
+							"raw": "{\n    \"name\": \"{{c_site_name}}\",\n    \"timezone\": \"{{c_time_zone}}\",\n    \"country_code\": \"{{c_country_code}}\",\n    \"latlng\": {\n        \"lat\": {{c_lat}},\n        \"lng\": {{c_lng}}\n    },\n    \"address\": \"{{formatted_address}}\",\n    \"sitegroup_ids\": {{c_sitegroup_ids}},\n    \"rftemplate_id\": \"{{c_rftemplate_id}}\",\n    \"secpolicy_id\": \"{{c_secpolicy_id}}\",\n    \"alarmtemplate_id\": \"{{c_alarmtemplate_id}}\",\n    \"networktemplate_id\": \"{{c_networktemplate_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -746,8 +743,7 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						},
@@ -869,8 +865,7 @@
 							"variable": [
 								{
 									"key": "site_id",
-									"value": "{{c_site_id}}",
-									"type": "string"
+									"value": "{{c_site_id}}"
 								}
 							]
 						},
@@ -919,8 +914,7 @@
 							"variable": [
 								{
 									"key": "site_id",
-									"value": "{{c_site_id}}",
-									"type": "string"
+									"value": "{{c_site_id}}"
 								}
 							]
 						},
@@ -1008,8 +1002,7 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						},
@@ -1093,8 +1086,7 @@
 							"variable": [
 								{
 									"key": "orgr_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						}
@@ -1216,8 +1208,7 @@
 							"variable": [
 								{
 									"key": "org_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						},
@@ -1381,8 +1372,7 @@
 									"variable": [
 										{
 											"key": "orgr_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								}
@@ -1416,10 +1406,40 @@
 							"name": "updateSiteSettings - Generic",
 							"event": [
 								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function isJson(str) {",
+											"    console.info(`PAYLOAD: ${str}`)",
+											"    try {",
+											"        test = JSON.parse(str);",
+											"        console.info(`results: ${test}`)",
+											"        return true;",
+											"    } catch (e) {",
+											"        console.info(\"BAD JSON\")",
+											"        return false;",
+											"    }",
+											"}",
+											"",
+											"jsonPayload = pm.request.body.toString()",
+											"console.info(jsonPayload)",
+											"",
+											"pm.test(\"Payload is valid JSON\", function() {",
+											"    isJson(jsonPayload).to.eql(true)",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"var jsonData = JSON.parse(responseBody);",
+											"try {",
+											"    var jsonData = JSON.parse(responseBody);",
+											"}",
+											"",
 											"pm.test(\"Status code is 200\", function() {",
 											"  pm.expect(pm.response.code).to.equal(200);",
 											"});"
@@ -1449,7 +1469,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\n}",
+									"raw": "{\n    test: null\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1472,8 +1492,7 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}",
-											"type": "string"
+											"value": "{{site_id}}"
 										}
 									]
 								},
@@ -1618,8 +1637,7 @@
 									"variable": [
 										{
 											"key": "orgr_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								}
@@ -1814,7 +1832,7 @@
 					]
 				},
 				{
-					"name": "Set Site Variables",
+					"name": "Set Site Variables (WIP)",
 					"item": [
 						{
 							"name": "updateSiteSettings - SiteVars",
@@ -1886,8 +1904,7 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}",
-											"type": "string"
+											"value": "{{site_id}}"
 										}
 									]
 								},
@@ -2014,8 +2031,7 @@
 									"variable": [
 										{
 											"key": "orgr_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								}
@@ -2114,8 +2130,7 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}",
-											"type": "string"
+											"value": "{{c_site_id}}"
 										}
 									]
 								},
@@ -2240,8 +2255,7 @@
 									"variable": [
 										{
 											"key": "orgr_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								}
@@ -2317,8 +2331,7 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}",
-											"type": "string"
+											"value": "{{c_site_id}}"
 										}
 									]
 								},
@@ -2749,8 +2762,7 @@
 									"variable": [
 										{
 											"key": "orgr_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								}
@@ -2866,8 +2878,7 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{site_id}}",
-											"type": "string"
+											"value": "{{site_id}}"
 										}
 									]
 								},
@@ -2984,8 +2995,7 @@
 							"variable": [
 								{
 									"key": "orgr_id",
-									"value": "{{org_id}}",
-									"type": "string"
+									"value": "{{org_id}}"
 								}
 							]
 						}
@@ -3104,8 +3114,7 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								},
@@ -3199,13 +3208,11 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}",
-											"type": "string"
+											"value": "{{c_site_id}}"
 										},
 										{
 											"key": "device_id",
-											"value": "{{c_device_id}}",
-											"type": "string"
+											"value": "{{c_device_id}}"
 										}
 									]
 								}
@@ -3252,7 +3259,7 @@
 							]
 						}
 					],
-					"description": "This collection will use a CSV Template to rename multiple devices in an org.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is your Mist org_id, it's required to know which org to pull the current inventory from.\n\n\nCSV Required Values:\nmac - This is the mac address for the device you wish to name.\ndevice_name - Thi is the new name you wish for the device to be.\n\n\n\n\nExample CSV:\n\n```\ndevice_name,mac\nJakeAP43, aabbccddeeff\nRyanAP43, bbccddeeff11\n```",
+					"description": "This collection will use a CSV Template to rename multiple devices in an org.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is your Mist org_id, it's required to know which org to pull the current inventory from.\n\n\nCSV Required Values:\nmac_address - This is the mac address for the device you wish to name.\ndevice_name - This is the new name you wish for the device to be.\n\n\n\n\nExample CSV:\n\n```\ndevice_name,mac_address\nJakeAP43, aabbccddeeff\nRyanAP43, bbccddeeff11\n```",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -3337,8 +3344,7 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								},
@@ -3435,13 +3441,11 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}",
-											"type": "string"
+											"value": "{{c_site_id}}"
 										},
 										{
 											"key": "device_id",
-											"value": "{{c_device_id}}",
-											"type": "string"
+											"value": "{{c_device_id}}"
 										}
 									]
 								}
@@ -3488,7 +3492,7 @@
 							]
 						}
 					],
-					"description": "This collection will use a CSV Template to set the notes on multiple devices in an org.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is your Mist org_id, it's required to know which org to pull the current inventory from.\n\n\nCSV Required Values:\nmac_address - This is the mac address for the device you wish to name.\nnotes - Thi is the new name you wish for the device to be.\n\n\n\n\nExample CSV:\n\n```\nmac\naabbccddeeff,\"This is the notes i want to include\"\nbbccddeeff11,\"This are notes for another ap\"\n```",
+					"description": "This collection will use a CSV Template to set the notes on multiple devices in an org.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is your Mist org_id, it's required to know which org to pull the current inventory from.\n\n\nCSV Required Values:\nmac_address - This is the mac address for the device you wish to name.\nnotes - This is the new name you wish for the device to be.\n\n\n\n\nExample CSV:\n\n```\nmac_address,notes\naabbccddeeff,\"This is the notes i want to include\"\nbbccddeeff11,\"This are notes for another ap\"\n```",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -3572,8 +3576,7 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								},
@@ -3684,13 +3687,11 @@
 									"variable": [
 										{
 											"key": "site_id",
-											"value": "{{c_site_id}}",
-											"type": "string"
+											"value": "{{c_site_id}}"
 										},
 										{
 											"key": "device_id",
-											"value": "{{c_device_id}}",
-											"type": "string"
+											"value": "{{c_device_id}}"
 										}
 									]
 								}
@@ -3737,7 +3738,7 @@
 							]
 						}
 					],
-					"description": "This collection will use a CSV Template to static IP multiple sites.\n(Reverting to DHCP will come in a later release)\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is the org id of the org that contains the devices to statically IP'd.\n\n\nCSV Required Values:\nmac\nip_type \\\\static or DHCP\nif type = static\n    ip_address\n    netmask\n    gateway\n    dns_1\n    dns_2\n    dns_suffix\n    network_name \\\\Switching only\n\nCSV Optional Values:\nvlan_id \\\\ AP only.\n\nExample CSV:\n```\nmac,ip_type,ip_address,netmask,gateway,dns_1,dns_2,dns_suffix,vlan_id,network_name\nxxxxxxxxxxxx,static,192.168.5.65,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,1,\nxxxxxxxxxxxx,static,192.168.5.66,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,,default\n```",
+					"description": "This collection will use a CSV Template to static IP multiple sites.\n(Reverting to DHCP will come in a later release)\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is the org id of the org that contains the devices to statically IP'd.\n\n\nCSV Required Values:\nmac_address\nip_type \\\\static or DHCP\nif type = static\n    ip_address\n    netmask\n    gateway\n    dns_1\n    dns_2\n    dns_suffix\n    network_name \\\\Switching only\n\nCSV Optional Values:\nvlan_id \\\\ AP only.\n\nExample CSV:\n```\nmac_address,ip_type,ip_address,netmask,gateway,dns_1,dns_2,dns_suffix,vlan_id,network_name\nxxxxxxxxxxxx,static,192.168.5.65,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,1,\nxxxxxxxxxxxx,static,192.168.5.66,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,,default\n```",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -3822,8 +3823,7 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								},
@@ -4072,8 +4072,7 @@
 											"variable": [
 												{
 													"key": "site_id",
-													"value": "{{c_site_id}}",
-													"type": "string"
+													"value": "{{c_site_id}}"
 												}
 											]
 										}
@@ -4174,8 +4173,7 @@
 											"variable": [
 												{
 													"key": "site_id",
-													"value": "{{c_site_id}}",
-													"type": "string"
+													"value": "{{c_site_id}}"
 												}
 											]
 										}
@@ -4311,8 +4309,7 @@
 											"variable": [
 												{
 													"key": "site_id",
-													"value": "{{site_id}}",
-													"type": "string"
+													"value": "{{site_id}}"
 												}
 											]
 										}
@@ -4386,13 +4383,11 @@
 											"variable": [
 												{
 													"key": "site_id",
-													"value": "{{site_id}}",
-													"type": "string"
+													"value": "{{site_id}}"
 												},
 												{
 													"key": "device_id",
-													"value": "{{id}}",
-													"type": "string"
+													"value": "{{id}}"
 												}
 											]
 										},
@@ -4510,8 +4505,7 @@
 									"variable": [
 										{
 											"key": "org_id",
-											"value": "{{org_id}}",
-											"type": "string"
+											"value": "{{org_id}}"
 										}
 									]
 								},
