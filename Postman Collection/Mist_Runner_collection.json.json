@@ -1,7 +1,11 @@
 {
 	"info": {
 		"_postman_id": "499a6c92-3df7-4ed6-9cf7-fd2e06869b9d",
+<<<<<<< HEAD
 		"name": "Mist Runner Collections 0.3.7",
+=======
+		"name": "Mist Runner Collections 0.3.4",
+>>>>>>> 04e52ea6f0ad0721ed093be9ec7dbd0cb1a1bc31
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
