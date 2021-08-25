@@ -1513,10 +1513,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"try {",
-											"    var jsonData = JSON.parse(responseBody);",
-											"}",
-											"",
 											"pm.test(\"Status code is 200\", function() {",
 											"  pm.expect(pm.response.code).to.equal(200);",
 											"});"
