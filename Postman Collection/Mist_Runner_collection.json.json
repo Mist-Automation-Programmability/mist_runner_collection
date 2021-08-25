@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "499a6c92-3df7-4ed6-9cf7-fd2e06869b9d",
-		"name": "Mist Runner Collections 0.3.7",
+		"_postman_id": "dadbd3d3-26e1-4c81-9d53-449d3dc0aa0b",
+		"name": "Mist Runner Collections 0.3.8",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -923,7 +923,7 @@
 					"response": []
 				}
 			],
-			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n## Required Environmental Variables:\n\n`apitoken` -  This your Mist dashboard API token.  It should have permissions to create sites in Mist. </br></br>\n\n## Optional Environment Variables\n`google_api_token` This is a google API token that has access to geocode APIs.  If you provide all the geocoding/timezone values, this will not be required.  See Scenario `Skip Geocoding`\n\n\n## CSV Required Values:\n`site_name`</br>\n`site_address` This address should be in quotes in the CSV if it contains commas. </br>\n\n## CSV Optional Values:\n`sitegroup_ids` this should be presented as a JSON list of sitegroup IDs.\n* Example: `[\"xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"]`</br></br>\n\n`rftemplate_id` This should be the rftemplate_id you want applied to this site\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n`alarmtemplate_id` This should be the alarmtemplate_id you want applied\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n## Scenario Options:\n\n### Skip Geocoding:\nIn order to skip geocoding, you must provide the following values in the CSV.  See the example CSV for details on what these should look like\n\n#### Required Values:\n* `lat` this is the site lattitude\n* `lng` this is the site longitude\n* `time_zone` This is the site time_zone\n* `country_code`: The 2 letter country code.\n\n### Clone Existing Site\nIn this scenario, we are going to clone the settings of an existing site, and create a new site with the values passed in.\n\n#### Required Values:\n* `site_template_name` This is the name of the site you want to copy.\n\n\n## Example CSV:\n\n```\nsite_name,site_address,rftemplate_id,lat,lng,time_zone,country_code,site_template_name,sitegroup_ids,alarmtemplate_id\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nCloning-Site,\"350 State St, Salt Lake City, UT 84103\",,,,,,Jake R Snyder,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nWashington4,\"416 Sid Snyder Avenue SW, Olympia, Washington 98504\",,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\nNormal Site with RF Template,\"900 Court St NE, Salem, OR 97301\",9f65efea-0535-43af-80e5-f9f7d2bb8917,,,,,,,\nNormal Site with SiteGroup,\"900 Court St NE, Salem, OR 97301\",,,,,,,\"[\"\"31d37657-64c7-4e7d-98d2-1b077160b952\"\"]\",\nNormal Site with AlarmTemplate,\"900 Court St NE, Salem, OR 97301\",,,,,,,,4c4e03b2-5774-430f-8c57-6fbd1251f3df\n```",
+			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n## Required Environmental Variables:\n\n`apitoken` -  This your Mist dashboard API token.  It should have permissions to create sites in Mist. </br></br>\n\n## Optional Environment Variables\n`google_api_token` This is a google API token that has access to geocode APIs.  If you provide all the geocoding/timezone values, this will not be required.  See Scenario `Skip Geocoding`\n\n\n## CSV Required Values:\n`site_name`</br>\n`site_address` This address should be in quotes in the CSV if it contains commas. </br>\n\n## CSV Optional Values:\n`sitegroup_ids` this should be presented as a JSON list of sitegroup IDs.\n* Example: `[\"xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"]`</br></br>\n\n`rftemplate_id` This should be the rftemplate_id you want applied to this site\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n`alarmtemplate_id` This should be the alarmtemplate_id you want applied\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n## Scenario Options:\n\n### Skip Geocoding:\nIn order to skip geocoding, you must provide the following values in the CSV.  See the example CSV for details on what these should look like\n\n#### Required Values:\n* `lat` this is the site lattitude\n* `lng` this is the site longitude\n* `time_zone` This is the site time_zone\n* `country_code`: The 2 letter country code.\n\n### Clone Existing Site\nIn this scenario, we are going to clone the settings of an existing site, and create a new site with the values passed in.\n\n#### Required Values:\n* `site_template_name` This is the name of the site you want to copy.\n\n### Custom Site Settings:\nYou need to updated the body of `UpdateSiteSettings_sitecreation` to include any custom settings you want the sites created with.\n\n\n## Example CSV:\n\n```\nsite_name,site_address,rftemplate_id,lat,lng,time_zone,country_code,site_template_name,sitegroup_ids,alarmtemplate_id\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nCloning-Site,\"350 State St, Salt Lake City, UT 84103\",,,,,,Jake R Snyder,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nWashington4,\"416 Sid Snyder Avenue SW, Olympia, Washington 98504\",,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\nNormal Site with RF Template,\"900 Court St NE, Salem, OR 97301\",9f65efea-0535-43af-80e5-f9f7d2bb8917,,,,,,,\nNormal Site with SiteGroup,\"900 Court St NE, Salem, OR 97301\",,,,,,,\"[\"\"31d37657-64c7-4e7d-98d2-1b077160b952\"\"]\",\nNormal Site with AlarmTemplate,\"900 Court St NE, Salem, OR 97301\",,,,,,,,4c4e03b2-5774-430f-8c57-6fbd1251f3df\n```",
 			"auth": {
 				"type": "apikey",
 				"apikey": [
@@ -964,20 +964,77 @@
 			"name": "Inventory Assignment",
 			"item": [
 				{
-					"name": "getOrgInventory_Assignment",
+					"name": "getOrgInventory_assignment",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
+									"var nextRequest = null",
+									"",
 									"for (var i = 0; i < jsonData.length; i++){",
-									"    if (jsonData[i].mac == pm.variables.get(\"mac_address\")){",
+									"    if (jsonData[i].mac == pm.iterationData.get(\"mac_address\").toLowerCase()){",
 									"        pm.collectionVariables.set(\"c_device_id\", jsonData[i].id);",
-									"        console.log(\"id = \" + jsonData[i].id);",
+									"        // console.log(\"id = \" + jsonData[i].id);",
 									"    };",
 									"};",
-									""
+									"if (((jsonData.length) == 1) && (!!pm.collectionVariables.get(\"c_device_id\"))) {",
+									"    nextRequest = \"getOrgSitesByName_assignment\"",
+									"};",
+									"",
+									"pm.test(\"A single device was found in inventory\", function() {",
+									"  pm.expect(jsonData.length).to.eql(1)",
+									"});",
+									"",
+									"postman.setNextRequest(nextRequest);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure all collection variables are removed before running.",
+									"pm.collectionVariables.unset(\"c_site_id\");",
+									"pm.collectionVariables.unset(\"c_lat\");",
+									"pm.collectionVariables.unset(\"c_lng\");",
+									"pm.collectionVariables.unset(\"c_time_zone\")",
+									"",
+									"pm.collectionVariables.unset(\"c_site_name\");",
+									"pm.collectionVariables.unset(\"c_site_template_id\");",
+									"pm.collectionVariables.unset(\"c_site_template_name\");",
+									"pm.collectionVariables.unset(\"c_site_address\");",
+									"pm.collectionVariables.set(\"c_sitegroup_ids\", null);",
+									"pm.collectionVariables.set(\"c_rftemplate_id\", \"\");",
+									"pm.collectionVariables.set(\"c_secpolicy_id\", \"\");",
+									"pm.collectionVariables.set(\"c_alarmtemplate_id\", \"\");",
+									"pm.collectionVariables.set(\"c_networktemplate_id\", \"\");",
+									"pm.collectionVariables.unset(\"c_site_template_settings\");",
+									"pm.collectionVariables.unset(\"c_geocode\")",
+									"pm.collectionVariables.set(\"c_clone\", false)",
+									"pm.collectionVariables.unset(\"country_code\");",
+									"pm.collectionVariables.unset(\"formatted_address\");",
+									"pm.collectionVariables.unset(\"lat\");",
+									"pm.collectionVariables.unset(\"lng\");",
+									"pm.collectionVariables.unset(\"time_zone\");",
+									"pm.collectionVariables.unset(\"c_device_id\");",
+									"pm.collectionVariables.unset(\"no_reassignment_bool\");",
+									"pm.collectionVariables.unset(\"mac_address\")",
+									"",
+									"//Handling of digit only sites with quotes.",
+									"var formatted_string = pm.iterationData.get(\"site_name\")",
+									"if (formatted_string.includes(\"\\'\") || formatted_string.includes(\"\\\"\")) {",
+									"    console.info(\"stripping formatting of site_name\")",
+									"    formatted_string = formatted_string.replace(/'/g, \"\");",
+									"    formatted_string = formatted_string.replace(/\"/g, \"\");",
+									"    console.log(`Formatted Name ${formatted_string}`);",
+									"    pm.collectionVariables.set(\"c_site_name\", formatted_string)",
+									"}",
+									"else {",
+									"    pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
+									"}"
 								],
 								"type": "text/javascript"
 							}
@@ -987,7 +1044,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory",
+							"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?mac={{mac_address}}",
 							"protocol": "https",
 							"host": [
 								"{{host}}"
@@ -998,6 +1055,12 @@
 								"orgs",
 								":org_id",
 								"inventory"
+							],
+							"query": [
+								{
+									"key": "mac",
+									"value": "{{mac_address}}"
+								}
 							],
 							"variable": [
 								{
@@ -1045,23 +1108,36 @@
 					]
 				},
 				{
-					"name": "getOrgSitesByName",
+					"name": "getOrgSitesByName_assignment",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.test(\"Status code is 200\", function() {",
-									"  pm.expect(pm.response.code).to.equal(200);",
+									"var nextRequest = null;",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"for(let i = 0; i < jsonData.length; i++){",
-									"    console.log(jsonData[i].name);",
-									"    if(jsonData[i].name == pm.variables.get(\"site_name\")){",
+									"    // console.log(jsonData[i].name);",
+									"    if(jsonData[i].name == pm.collectionVariables.get(\"c_site_name\")){",
 									"        pm.collectionVariables.set(\"c_site_id\", jsonData[i].id);",
-									"        console.log(jsonData[i].id);",
+									"        console.log(`Matched Site: ${jsonData[i].name}`);",
+									"        break;",
+									"    }",
+									"    else {",
+									"        console.info(f`Mismatch Site: ${jsonData[i].name}`)",
+									"",
+									"    };",
 									"};",
-									"};"
+									"",
+									"console.info(`Site ID: ${pm.collectionVariables.get(\"c_site_id\")}`);",
+									"if (!!pm.collectionVariables.get(\"c_site_id\")) {",
+									"    nextRequest = \"assignOrgInventoryToSite_assignment\"",
+									"};",
+									"",
+									"postman.setNextRequest(nextRequest);"
 								],
 								"type": "text/javascript"
 							}
@@ -1128,15 +1204,15 @@
 					]
 				},
 				{
-					"name": "assignOrgInventoryToSite",
+					"name": "assignOrgInventoryToSite_assignment",
 					"event": [
 						{
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"pm.environment.set(\"no_reassignment_bool\", (pm.variables.get(\"no_reassignment\") == \"true\"))",
-									"console.log(\"Site ID = \" + pm.collectionVariables.get(\"site_id\"))",
-									"console.log(pm.collectionVariables.get(\"no_reassignment_bool\"))",
+									"pm.collectionVariables.set(\"no_reassignment_bool\", (pm.iterationData.get(\"no_reassignment\") == \"true\"))",
+									"// console.log(\"Site ID = \" + pm.collectionVariables.get(\"c_site_id\"))",
+									"// console.log(pm.collectionVariables.get(\"no_reassignment_bool\"))",
 									"",
 									""
 								],
@@ -1158,6 +1234,7 @@
 									"pm.collectionVariables.unset(\"c_site_id\")",
 									"pm.collectionVariables.unset(\"c_device_id\")",
 									"pm.collectionVariables.unset(\"mac_address\")",
+									"pm.collectionVariables.unset(\"no_reassignment_bool\");",
 									""
 								],
 								"type": "text/javascript"
@@ -1251,7 +1328,7 @@
 					]
 				}
 			],
-			"description": "This collection will use a CSV Template to assign multiple devices to a site.\n\n\nRequired Environmental Variables:\n\n`apitoken` -  This your Mist dashboard API token.  It should have permissions to assign inventory to sites in Mist.</br>\n\n`org_id` This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\n`site_name`</br>\n`mac_address`</br>\n`force_reassignment` - Should be `true` or `false` - If you want to reassign inventory that is already assigned to a site, select true.  Should be all lower-case, but be warned that excel hates that (use text for cell format).\n\n\n\nExample CSV:\n```\nsite_name,mac_address,force_reassignment\nsite01,aabbccddeeff,false\n```",
+			"description": "This collection will use a CSV Template to assign multiple devices to a site.\n\n\nRequired Environmental Variables:\n\n`apitoken` -  This your Mist dashboard API token.  It should have permissions to assign inventory to sites in Mist.</br>\n\n`org_id` This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\n`site_name`</br>\n`mac_address`</br>\n`no_reassignment` - Should be `true` or `false` - If you want to reassign inventory that is already assigned to a site, select true.  Should be all lower-case, but be warned that excel hates that (use text for cell format).\n\n\n\nExample CSV:\n```\nsite_name,mac_address,no_reassignment\nsite01,aabbccddeeff,false\n```",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1810,110 +1887,6 @@
 						}
 					],
 					"description": "This collection will iterate through site objects in the org and set templates defined in the template.\n\nFor site, please use the `site_name` field.  for the remaining fields, use their respective IDs\n`networktemplate_id`\n`alarmttemplate_id`\n`rftemplate_id`\n\nThere is currently not support for the template name, you will need the ID for the templates.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to modify sites\n\n\nExamples CSV:\n```csv\nsite_name,rftemplate_id,networktemplate_id,alarmtemplate_id,secpolicy_id\nIDA,xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,,,\n\n```",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									""
-								]
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									""
-								]
-							}
-						}
-					]
-				},
-				{
-					"name": "Set Site Variables (WIP)",
-					"item": [
-						{
-							"name": "updateSiteSettings - SiteVars",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"var jsonData = JSON.parse(responseBody);",
-											"pm.test(\"Status code is 200\", function() {",
-											"  pm.expect(pm.response.code).to.equal(200);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								},
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"console.log(JSON.stringify(pm.iterationData.toJSON()));",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "Content-Type",
-										"type": "text",
-										"value": "application/json"
-									},
-									{
-										"key": "Accept",
-										"type": "text",
-										"value": "application/json"
-									},
-									{
-										"key": "X-CSRFToken",
-										"type": "text",
-										"value": "{{csrftoken}}"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
-									"protocol": "https",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"sites",
-										":site_id",
-										"setting"
-									],
-									"variable": [
-										{
-											"key": "site_id",
-											"value": "{{site_id}}"
-										}
-									]
-								},
-								"description": " #### Body Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n analytic.enabled|boolean|enable Advanced Analytic feature, default is false (using SUB-ANA license)\r\n app_waking|boolean|default is false\r\n auto_upgrade|object|auto upgrade\r\n bandwidth|int|channel width for the band, 20 / 40 / 80, 80 is only applicable for band_5\r\n ble_config|object|BLE config (see Site:BLE Config)\r\n ble|object|BLE asset settings\r\n brightness|int|0-255, default is 255\r\n channel|int|(primary) channel for the band, 0 means auto\r\n channels|list|list of channels, null or empty array means auto\r\n device_updown_threshold|int|sending AP_DISCONNECTED event in device-updowns only if AP_CONNECTED is not seen within the threshold, in minutes, 0 - 30, default is 0\r\n flags|list|name/val pair objects for location engine to use\r\n hello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\n hello_retries|int|between 2 and 30, default is 7\r\n led.enabled|boolean|whether to enable LED, default is true\r\n led|object|LED control\r\n model_specific|object|overwrites for a specific model. If a band is specified, it will shadow the default.\r\n mxtunnel.mtu|int|552-1500, default is 0\r\n ntp_servers|list|list of NTP servers\r\n persist_config_on_device|boolean|whether to store the config on AP, default is false\r\n power_max|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power_min|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power|int|tx power of the radio, 0 mean auto\r\n preamble|string|short / long / auto, default is short\r\n proxy|object|Proxy Configuration for APs to talk to Mist\r\n radio_config|object|site RF settings\r\n remote_syslog|object|syslog parameters\r\n report_gatt|boolean|default is false; whether AP should periodically connect to BLE devices and report GATT device info (device name, manufacturer name, serial number, battery %, temperature, humidity)\r\n rogue|object|rogue detection parameters\r\n rtsa|object|managed mobility\r\n ssh_keys|list|when limit_ssh_access = true in Org Setting, list of SSH public keys provided by Mist Support to install onto APs (see Org:Setting)\r\n track_anonymous_devices|boolean|default is false; whether to track anonymous BLE assets (requires ‘track_asset’ enabled)\r\n track_asset|boolean|enable Asset Tracking, default is false (using SUB-AST license)\r\n vars|object|a dictionary of name->value, the vars can then be used in Wlans\r\n wifi|object|managed connectivity\r\n\r\n #### Wi-Fi Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|enable WIFI feature, default is true (using SUB-MAN license)\r\n enable_arp_spoof_check|boolean|when proxy_arp is enabled, check for arp spoofing. default is false\r\n enable_channel_144|boolean|whether to enable channel 144 (some older clients may not support in US), default is false\r\n enable_vna|boolean|enable Virtual Network Assistant, default is false (using SUB-VNA license)\r\n proxy_arp|string|default / enabled / disabled\r\n locate_unconnected|boolean|whether to locate unconnected clients, default is false\r\n mesh_enabled|boolean|whether to enable Mesh feature for the site, default is false\r\n disable_11k|boolean|whether to disable 11k, default is false\r\n \r\n #### Remote Syslog Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not remote syslog is enabled\r\n servers|list|list of syslog servers\r\n host|string|host to which syslog is sent\r\n protocol|string|udp / tcp, protocol to use for remote syslog, default is udp\r\n port|int|port on which to connect to host for syslog, default is 514 if protocol=udp, 6514 if protocol=tcp\r\n facility|string|kern / user / mail / daemon / auth / syslog / lpr / news / uucp / cron / authpriv / ftp / ntp / security / console / solaris-cron / local0 - local7, default is config\r\n severity|string|emerg / alert / crit / err / warning / notice / info / debug, default is info\r\n tag|string|optional, tag to attach to log record\r\n \r\n #### Rogue Detection Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not rogue detection is enabled\r\n honeypot_enabled|boolean|whether or not honeypot detection is enabled\r\n min_rssi|int|minimum RSSI for an AP to be considered rogue (ignoring APs that’s far away), default is -80. Minimum allowed value is -85.\r\n min_duration|int|minimum duration for a bssid to be considered rogue, maximum is 59, default is 10\r\n whitelisted_ssids|list|list of SSIDs to whitelist\r\n whitelisted_bssids|list|list of BSSIDs to whitelist\r\n \r\n #### Auto Upgrade Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether auto upgrade should happen, default is false (Note that Mist may auto-upgrade if the version is not supported)\r\n version|string|desired version, beta / stable / custom, default is stable\r\n time_of_day|string|any / HH:MM (24-hour format), upgrade will happen within up to 1-hour from this time\r\n day_of_week|string|any / mon / tue / wed / thu / fri / sat / sun\r\n custom_versions|object|custome versions for different models\r\n\r\n #### Engagement Parameter\r\n NOTE: if hours does not exist, it’s treated as everyday of the week, 00:00-23:59. Currently we don’t allow multiple ranges for the same day\r\n\r\nNOTE: default values for dwell_tags: passerby (1,300) bounce (301, 14400) engaged (14401, 28800) stationed (28801, 42000)\r\n\r\nNOTE: default values for dwell_tag_names: passerby = “Passerby”, bounce = “Visitor”, engaged = “Associates”, stationed = “Assets”\r\n\r\n\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n dwell_tags|object|add tags to visits within the duration (in seconds), available tags (passerby, bounce, engaged, stationed)\r\n max_dwell|int|max time, default is 43200(12h), max is 68400 (18h)\r\n min_dwell|int|min time, default is 0.\r\n hours|object|hours of operation filter, the available days (mon, tue, wed, thu, fri, sat, sun). Note: If the dow is not defined then it’s treated as 00:00-23:59.\r\n \r\n #### WIDS Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n threshold|int|count of events to trigger\r\nduration|int|window where a trigger will be detected and action to be taken (in seconds)\r\n\r\n #### Tunnel Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n hosts|list|hostnames or IPs where a Mist Tunnel will use as the Peer (i.e. they are reachable from AP)\r\nap_subnets|list|list of subnets where we allow AP to establish Mist Tunnels from\r\nprotocol|list|udp / ip, default is udp\r\nvlan_ids|list|list of vlan_ids that will be used\r\nhello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\nhello_retries|int|between 2 and 30, default is 7"
-							},
-							"response": []
-						}
-					],
-					"description": "This collection will use a the exported JSON payload of all sites to push arbitrary config to each site.  \n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - SiteVars` to the payload you want to push.",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -3282,6 +3255,246 @@
 					]
 				},
 				{
+					"name": "Device Management",
+					"item": [
+						{
+							"name": "getOrgInventory_management",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"proceedCheck = true",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"if (jsonData.length != 1) {",
+											"        console.log(`Did not find exactly 1 device, Found ${jsonData.length}`)",
+											"        proceedCheck = false",
+											"        };",
+											"pm.test(\"Results length > 0\", function() {",
+											"  pm.expect(jsonData.length).to.equal(1);",
+											"});",
+											"",
+											"",
+											"if (proceedCheck == false){",
+											"     nextRequest = null;",
+											"     postman.setNextRequest(nextRequest);",
+											"};",
+											"",
+											"pm.collectionVariables.set(\"c_device_id\", jsonData[0].id);",
+											"pm.collectionVariables.set(\"c_site_id\", jsonData[0].site_id);",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.unset(\"c_device_id\",);",
+											"pm.collectionVariables.unset(\"c_site_id\");"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?mac={{mac_address}}",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":org_id",
+										"inventory"
+									],
+									"query": [
+										{
+											"key": "mac",
+											"value": "{{mac_address}}"
+										}
+									],
+									"variable": [
+										{
+											"key": "org_id",
+											"value": "{{org_id}}"
+										}
+									]
+								},
+								"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
+											"protocol": "https",
+											"host": [
+												"{{hosts}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"orgs",
+												":org_id",
+												"inventory"
+											],
+											"variable": [
+												{
+													"key": "org_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "updateDevice_management",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"pm.test(\"Response Shows Name set\", function() {",
+											"    pm.expect(jsonData.name == pm.variables.get(\"device_name\"))",
+											"});",
+											"",
+											"",
+											"pm.collectionVariables.unset(\"c_device_id\");",
+											"pm.collectionVariables.unset(\"c_site_id\");",
+											"pm.collectionVariables.unset(\"device_id\")",
+											"pm.collectionVariables.unset(\"site_id\")",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"management\": {{device_management}}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"devices",
+										":device_id"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{c_site_id}}"
+										},
+										{
+											"key": "device_id",
+											"value": "{{c_device_id}}"
+										}
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "OK",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{host}}/api/v1/sites/:site_id/devices/:device_id",
+											"protocol": "https",
+											"host": [
+												"{{host}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"sites",
+												":site_id",
+												"devices",
+												":device_id"
+											],
+											"variable": [
+												{
+													"key": "site_id",
+													"value": ""
+												},
+												{
+													"key": "device_id",
+													"value": ""
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [],
+									"cookie": [],
+									"body": "{\n    \"name\": \"conference room\",\n    \"notes\": \"slightly off center\",\n    \"map_id\": \"63eda950-c6da-11e4-a628-60f81dd250cc\",\n    \"x\": 53.5,\n    \"y\": 173.1,\n    \"orientation_overwrite\": true,\n    \"orientation\": 45,\n    \"height\": 3,\n    \"radio_config\": {\n        \"band_24\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 20,\n            \"power\": 1,\n            \"antenna_mode\": \"1x1\",\n            \"allow_rrm_disable\": false\n        },\n        \"band_5\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 40,\n            \"power\": 0,\n            \"antenna_mode\": \"default\"\n        },\n        \"ant_gain_24\": 4,\n        \"ant_gain_5\": 5,\n        \"band_24_usage\": \"5\",\n        \"band_5_on_24_radio\": {\n            \"disabled\": false,\n            \"channel\": 0,\n            \"bandwidth\": 40,\n            \"power\": 0,\n            \"antenna_mode\": \"default\"\n        },\n        \"scanning_enabled\": true\n    },\n    \"ip_config\": {\n        \"type\": \"static\",\n        \"ip\": \"10.2.1.1\",\n        \"netmask\": \"255.255.255.0\",\n        \"gateway\": \"10.2.1.254\",\n        \"type6\": \"static\",\n        \"ip6\": \"2607:f8b0:4005:808::2004\",\n        \"netmask6\": \"/32\",\n        \"gateway6\": \"2607:f8b0:4005:808::1\",\n        \"dns\": [\n            \"8.8.8.8\",\n            \"4.4.4.4\"\n        ],\n        \"dns_suffix\": [\n            \".mist.local\",\n            \".mist.com\"\n        ],\n        \"vlan_id\": 1,\n        \"mtu\": 0\n    },\n    \"ble_config\": {\n        \"power_mode\": \"custom\",\n        \"power\": 10,\n        \"beacon_enabled\": true,\n        \"beacon_rate_mode\": \"custom\",\n        \"beacon_rate\": 3,\n        \"beam_disabled\": [\n            1,\n            3,\n            6\n        ],\n        \"ibeacon_enabled\": true,\n        \"ibeacon_uuid\": \"f3f17139-704a-f03a-2786-0400279e37c3\",\n        \"ibeacon_major\": 13,\n        \"ibeacon_minor\": 138,\n        \"ibeacon_adv_power\": -65,\n        \"ibeacon_beams\": \"default\",\n        \"eddystone_uid_enabled\": false,\n        \"eddystone_uid_namespace\": \"2818e3868dec25629ede\",\n        \"eddystone_uid_instance\": \"5c5b35000001\",\n        \"eddystone_uid_freq_msec\": 200,\n        \"eddystone_uid_adv_power\": -65,\n        \"eddystone_uid_beams\": \"default\",\n        \"eddystone_url_enabled\": false,\n        \"eddystone_url_url\": \"https://www.abc.com\",\n        \"eddystone_url_freq_msec\": 1000,\n        \"eddystone_url_adv_power\": -65,\n        \"eddystone_url_beams\": \"2-4,7\"\n    },\n    \"usb_config\": {\n        \"enabled\": true,\n        \"type\": \"imagotag\",\n        \"host\": \"1.1.1.1\",\n        \"channel\": 3,\n        \"port\": 0,\n        \"verify_cert\": false,\n        \"cacert\": \"\"\n    },\n    \"led\": {\n        \"enabled\": true,\n        \"brightness\": 255\n    },\n    \"mesh\": {\n        \"enabled\": true,\n        \"role\": \"base\",\n        \"group\": 0\n    },\n    \"switch_config\": {\n        \"enabled\": true,\n        \"eth0\": {\n            \"vlan_ids\": [\n                1,\n                3055\n            ],\n            \"port_vlan_id\": 1\n        }\n    },\n    \"iot_config\": {\n        \"DO\": {\n            \"enabled\": true,\n            \"value\": 1\n        },\n        \"DI1\": {\n            \"name\": \"motion\",\n            \"enabled\": true\n        },\n        \"A1\": {\n            \"name\": \"pulled-up analog\",\n            \"enabled\": true\n        }\n    },\n    \"disable_eth1\": false,\n    \"disable_module\": false,\n    \"poe_passthrough\": false,\n    \"pwr_config\": {\n        \"base\": 2000\n    },\n    \"vars\": {\n        \"RADIUS_SECRET\": \"11s64632d\",\n        \"RADIUS_IP1\": \"172.31.2.5\"\n    },\n    \"ntp_servers\": [],\n    \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\",\n    \"image1_url\": \"https://url/to/image.png\"\n}"
+								}
+							]
+						}
+					],
+					"description": "This collection will use a CSV Template to flip the management of multiple devices in an org.\n\n\n# Required Environmental Variables:\n\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n`org_id` This is your Mist org_id, it's required to know which org to pull the current inventory from.\n\n\n## CSV Required Values:\n`mac_address` - This is the mac address for the device you wish to name.\n\n`management` - this is true/false on whether Mist is managing the configuration on this device.  Applies to Switches and Gateways only.\n\n\n\n\nExample CSV:\n\n```\nmac_address,management\naabbccddeeff,true\nbbccddeeff11,false\n```",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
 					"name": "Device Notes",
 					"item": [
 						{
@@ -3492,7 +3705,7 @@
 							]
 						}
 					],
-					"description": "This collection will use a CSV Template to set the notes on multiple devices in an org.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is your Mist org_id, it's required to know which org to pull the current inventory from.\n\n\nCSV Required Values:\nmac_address - This is the mac address for the device you wish to name.\nnotes - This is the new name you wish for the device to be.\n\n\n\n\nExample CSV:\n\n```\nmac_address,notes\naabbccddeeff,\"This is the notes i want to include\"\nbbccddeeff11,\"This are notes for another ap\"\n```",
+					"description": "This collection will use a CSV Template to set the notes on multiple devices in an org.\n\n\nRequired Environmental Variables:\n\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites.\n\n`org_id` This is your Mist org_id, it's required to know which org to pull the current inventory from.\n\n\nCSV Required Values:\n`mac_address` - This is the mac address for the device you wish to name.\n\n`notes` - This is the new name you wish for the device to be.\n\n\n\n\nExample CSV:\n\n```\nmac_address,notes\naabbccddeeff,\"This is the notes i want to include\"\nbbccddeeff11,\"This are notes for another ap\"\n```",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -3738,7 +3951,7 @@
 							]
 						}
 					],
-					"description": "This collection will use a CSV Template to static IP multiple sites.\n(Reverting to DHCP will come in a later release)\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{org_id}} This is the org id of the org that contains the devices to statically IP'd.\n\n\nCSV Required Values:\nmac_address\nip_type \\\\static or DHCP\nif type = static\n    ip_address\n    netmask\n    gateway\n    dns_1\n    dns_2\n    dns_suffix\n    network_name \\\\Switching only\n\nCSV Optional Values:\nvlan_id \\\\ AP only.\n\nExample CSV:\n```\nmac_address,ip_type,ip_address,netmask,gateway,dns_1,dns_2,dns_suffix,vlan_id,network_name\nxxxxxxxxxxxx,static,192.168.5.65,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,1,\nxxxxxxxxxxxx,static,192.168.5.66,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,,default\n```",
+					"description": "This collection will use a CSV Template to static IP multiple sites.\n(Reverting to DHCP will come in a later release)\n\n## Required Environmental Variables:\n\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites.\n\n`org_id` This is the org id of the org that contains the devices to statically IP'd.\n\n\n## CSV Required Values:\n`mac_address`\n`ip_type`  \\\\static or DHCP\n`ip_type`  = static\n    `ip_address`\n    `netmask`\n    `gateway`\n    `dns_1`\n    `dns_2`\n    `dns_suffix`\n    `network_name` \\\\Switching only\n    `vlan_id` \\\\ AP only.\n\nCSV Optional Values:\n\n\nExample CSV:\n```\nmac_address,ip_type,ip_address,netmask,gateway,dns_1,dns_2,dns_suffix,vlan_id,network_name\nxxxxxxxxxxxx,static,192.168.5.65,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,1,\nxxxxxxxxxxxx,static,192.168.5.66,255.255.255.0,192.168.5.1,4.2.2.2,8.8.8.8,todsfromds.com,,default\n```",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -3757,113 +3970,6 @@
 									""
 								]
 							}
-						}
-					]
-				},
-				{
-					"name": "Device Profiles",
-					"item": [
-						{
-							"name": "getOrgInventory_profiles",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"var jsonData = JSON.parse(responseBody);",
-											"proceedCheck = true",
-											"pm.test(\"Status code is 200\", function() {",
-											"  pm.expect(pm.response.code).to.equal(200);",
-											"});",
-											"if (jsonData.length != 1) {",
-											"        console.log(`Did not find exactly 1 device, Found ${jsonData.length}`)",
-											"        proceedCheck = false",
-											"        };",
-											"pm.test(\"Results length > 0\", function() {",
-											"  pm.expect(jsonData.length).to.equal(1);",
-											"});",
-											"",
-											"",
-											"if (proceedCheck == false){",
-											"     nextRequest = null;",
-											"     postman.setNextRequest(nextRequest);",
-											"};",
-											"",
-											"pm.collectionVariables.set(\"c_device_id\", jsonData[0].id);",
-											"pm.collectionVariables.set(\"c_site_id\", jsonData[0].site_id);",
-											"",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "https://{{host}}/api/v1/orgs/:org_id/inventory?mac={{mac_address}}",
-									"protocol": "https",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"orgs",
-										":org_id",
-										"inventory"
-									],
-									"query": [
-										{
-											"key": "mac",
-											"value": "{{mac_address}}"
-										}
-									],
-									"variable": [
-										{
-											"key": "org_id",
-											"value": "{{org_id}}"
-										}
-									]
-								},
-								"description": "#### Response Parameters\n**Parameter**|**Type**|**Description** \nserial|string|device serial\nmodel|string|device model\ntype|string|device type, ap\nmac|string|MAC address\nname|string|device name if assigned\nid|string|device id\nsite_id|string|site id if assigned, null if not assigned\ndeviceprofile_id|string|deviceprofile id if assigned, null if not assigned\nconnected|boolean|whether the AP is connected\ncreated_time|long|inventory created time, in epoch\nmodified_time|long|inventory last modified time, in epoch\n\n\n#### Query Options\n* Filtered Inventory by\n * model\n * serial\n * magic\n * site_id\n\nExample:\n```\nhttps://{{host}}/api/v1/orgs/:org_id/inventory?model=AP41\n```"
-							},
-							"response": [
-								{
-									"name": "OK",
-									"originalRequest": {
-										"method": "GET",
-										"header": [],
-										"url": {
-											"raw": "https://{{hosts}}/api/v1/orgs/:org_id/inventory",
-											"protocol": "https",
-											"host": [
-												"{{hosts}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"orgs",
-												":org_id",
-												"inventory"
-											],
-											"variable": [
-												{
-													"key": "org_id",
-													"value": ""
-												}
-											]
-										}
-									},
-									"status": "OK",
-									"code": 200,
-									"_postman_previewlanguage": "json",
-									"header": [],
-									"cookie": [],
-									"body": "[\n    {\n        \"serial\": \"FXLH2015150025\",\n        \"modified_time\": 1542829778,\n        \"id\": \"00000000-0000-0000-0000-5c5b35000018\",\n        \"model\": \"AP41\",\n        \"type\": \"ap\",\n        \"mac\": \"5c5b35000018\",\n        \"name\": \"hallway\",\n        \"site_id\": \"4ac1dcf4-9d8b-7211-65c4-057819f0862b\",\n        \"deviceprofile_id\": \"6f4bf402-45f9-2a56-6c8b-7f83d3bc98e9\", \n        \"status\": \"connected\",\n        \"created_time\": 1542328276\n    }\n]"
-								}
-							]
 						}
 					]
 				}
@@ -4629,7 +4735,7 @@
 			"value": "api.mist.com"
 		},
 		{
-			"key": "force_reassignment",
+			"key": "no_reassignment_bool",
 			"value": ""
 		},
 		{
