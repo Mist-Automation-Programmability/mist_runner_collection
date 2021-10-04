@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "dadbd3d3-26e1-4c81-9d53-449d3dc0aa0b",
-		"name": "Mist Runner Collections 0.3.8.2",
+		"_postman_id": "499a6c92-3df7-4ed6-9cf7-fd2e06869b9d",
+		"name": "Mist Runner Collections 0.3.8.4",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -567,7 +567,7 @@
 							}
 						],
 						"url": {
-							"raw": "https://maps.googleapis.com/maps/api/geocode/json?address={{c_site_address}}&key={{google_api_key}}",
+							"raw": "https://maps.googleapis.com/maps/api/geocode/json?address={{c_site_address}}&key={{google_api_token}}",
 							"protocol": "https",
 							"host": [
 								"maps",
@@ -587,7 +587,7 @@
 								},
 								{
 									"key": "key",
-									"value": "{{google_api_key}}"
+									"value": "{{google_api_token}}"
 								}
 							]
 						}
@@ -923,7 +923,7 @@
 					"response": []
 				}
 			],
-			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n## Required Environmental Variables:\n\n`apitoken` -  This your Mist dashboard API token.  It should have permissions to create sites in Mist. </br></br>\n\n## Optional Environment Variables\n`google_api_token` This is a google API token that has access to geocode APIs.  If you provide all the geocoding/timezone values, this will not be required.  See Scenario `Skip Geocoding`\n\n\n## CSV Required Values:\n`site_name`</br>\n`site_address` This address should be in quotes in the CSV if it contains commas. </br>\n\n## CSV Optional Values:\n`sitegroup_ids` this should be presented as a JSON list of sitegroup IDs.\n* Example: `[\"xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"]`</br></br>\n\n`rftemplate_id` This should be the rftemplate_id you want applied to this site\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n`alarmtemplate_id` This should be the alarmtemplate_id you want applied\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n## Scenario Options:\n\n### Skip Geocoding:\nIn order to skip geocoding, you must provide the following values in the CSV.  See the example CSV for details on what these should look like\n\n#### Required Values:\n* `lat` this is the site lattitude\n* `lng` this is the site longitude\n* `time_zone` This is the site time_zone\n* `country_code`: The 2 letter country code.\n\n### Clone Existing Site\nIn this scenario, we are going to clone the settings of an existing site, and create a new site with the values passed in.\n\n#### Required Values:\n* `site_template_name` This is the name of the site you want to copy.\n\n### Custom Site Settings:\nYou need to updated the body of `UpdateSiteSettings_sitecreation` to include any custom settings you want the sites created with.\n\n\n## Example CSV:\n\n```\nsite_name,site_address,rftemplate_id,lat,lng,time_zone,country_code,site_template_name,sitegroup_ids,alarmtemplate_id\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nCloning-Site,\"350 State St, Salt Lake City, UT 84103\",,,,,,Jake R Snyder,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nWashington4,\"416 Sid Snyder Avenue SW, Olympia, Washington 98504\",,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\nNormal Site with RF Template,\"900 Court St NE, Salem, OR 97301\",9f65efea-0535-43af-80e5-f9f7d2bb8917,,,,,,,\nNormal Site with SiteGroup,\"900 Court St NE, Salem, OR 97301\",,,,,,,\"[\"\"31d37657-64c7-4e7d-98d2-1b077160b952\"\"]\",\nNormal Site with AlarmTemplate,\"900 Court St NE, Salem, OR 97301\",,,,,,,,4c4e03b2-5774-430f-8c57-6fbd1251f3df\n```",
+			"description": "This collection will use a CSV Template to create multiple sites via the Mist API.\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n## Required Environmental Variables:\n\n`apitoken` -  This your Mist dashboard API token.  It should have permissions to create sites in Mist. </br></br>\n\n## Optional Environment Variables\n`google_api_key` This is a google API token that has access to geocode APIs.  If you provide all the geocoding/timezone values, this will not be required.  See Scenario `Skip Geocoding`\n\n\n## CSV Required Values:\n`site_name`</br>\n`site_address` This address should be in quotes in the CSV if it contains commas. </br>\n\n## CSV Optional Values:\n`sitegroup_ids` this should be presented as a JSON list of sitegroup IDs.\n* Example: `[\"xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"]`</br></br>\n\n`rftemplate_id` This should be the rftemplate_id you want applied to this site\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n`alarmtemplate_id` This should be the alarmtemplate_id you want applied\n* Example: `xxxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` </br>\n\n## Scenario Options:\n\n### Skip Geocoding:\nIn order to skip geocoding, you must provide the following values in the CSV.  See the example CSV for details on what these should look like\n\n#### Required Values:\n* `lat` this is the site lattitude\n* `lng` this is the site longitude\n* `time_zone` This is the site time_zone\n* `country_code`: The 2 letter country code.\n\n### Clone Existing Site\nIn this scenario, we are going to clone the settings of an existing site, and create a new site with the values passed in.\n\n#### Required Values:\n* `site_template_name` This is the name of the site you want to copy.\n\n### Custom Site Settings:\nYou need to updated the body of `UpdateSiteSettings_sitecreation` to include any custom settings you want the sites created with.\n\n\n## Example CSV:\n\n```\nsite_name,site_address,rftemplate_id,lat,lng,time_zone,country_code,site_template_name,sitegroup_ids,alarmtemplate_id\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nCloning-Site,\"350 State St, Salt Lake City, UT 84103\",,,,,,Jake R Snyder,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nSkipGeocoding-Site,\"700 W Jefferson St, Boise, ID 83702\",,43.6178216,-116.1995185,America/Boise,US,,,\nNormalCreation-Site,\"900 Court St NE, Salem, OR 97301\",,,,,,,,\nWashington4,\"416 Sid Snyder Avenue SW, Olympia, Washington 98504\",,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\n''000001'',1497 Route 206 Tabernacle NJ 08088,,,,,,,,\nNormal Site with RF Template,\"900 Court St NE, Salem, OR 97301\",9f65efea-0535-43af-80e5-f9f7d2bb8917,,,,,,,\nNormal Site with SiteGroup,\"900 Court St NE, Salem, OR 97301\",,,,,,,\"[\"\"31d37657-64c7-4e7d-98d2-1b077160b952\"\"]\",\nNormal Site with AlarmTemplate,\"900 Court St NE, Salem, OR 97301\",,,,,,,,4c4e03b2-5774-430f-8c57-6fbd1251f3df\n```",
 			"auth": {
 				"type": "apikey",
 				"apikey": [
@@ -1127,8 +1127,7 @@
 									"        break;",
 									"    }",
 									"    else {",
-									"        console.info(f`Mismatch Site: ${jsonData[i].name}`)",
-									"",
+									"        console.info(`Mismatch Site : ${jsonData[i].name}`)",
 									"    };",
 									"};",
 									"",
