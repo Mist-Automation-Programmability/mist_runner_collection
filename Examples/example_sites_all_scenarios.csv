@@ -1,7 +1,7 @@
 site_name,site_address,rftemplate_id,lat,lng,time_zone,country_code,site_template_name,sitegroup_ids,alarmtemplate_id
 SkipGeocoding-Site,"700 W Jefferson St, Boise, ID 83702",,43.6178216,-116.1995185,America/Boise,US,,,
 Cloning-Site,"350 State St, Salt Lake City, UT 84103",,,,,,Jake R Snyder,,
-NormalCreation-Site,"900 Court St NE, Salem, OR 97301",,,,,,,,
+NormalCreation3-Site,"900 Court St NE, Salem, OR 97301",,,,,,,,
 SkipGeocoding-Site,"700 W Jefferson St, Boise, ID 83702",,43.6178216,-116.1995185,America/Boise,US,,,
 NormalCreation-Site,"900 Court St NE, Salem, OR 97301",,,,,,,,
 Washington4,"416 Sid Snyder Avenue SW, Olympia, Washington 98504",,,,,,,,

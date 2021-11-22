@@ -1,2 +1,3 @@
-site_name,mac_address,device_name,no_reassignment
-Idaho,d420b0011cec,device_002,true
+site_name,mac_address,device_name,no_reassignment,notes
+JakeLab,5c5b35f16f08,device_001,false,"This is a test"
+JakeLab,5c5b35f17800,device_002,false,"This is also a test"
