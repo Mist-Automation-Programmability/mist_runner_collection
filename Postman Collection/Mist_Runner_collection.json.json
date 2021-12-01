@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "dadbd3d3-26e1-4c81-9d53-449d3dc0aa0b",
-		"name": "Mist Runner Collections 0.3.9.0",
+		"name": "Mist Runner Collections 0.3.9.1",
 		"description": "This collection will use a CSV Template to create multiple sites via the Mist API  .\n\nIt also uses a google API to get the lat/long of the address and use the properly formatted address returned from Google Maps.\n\n\nRequired Environmental Variables:\n\n{{apitoken}} This your Mist dashboard API token.  It should have permissions to create sites\n{{google_api_token}} This is a google API token that has access to geocode APIs.\n\n\nCSV Required Values:\nsite_name\nsite_address (Note, must be URL Encoded (replace \" \" with \"+\" and enclosed in quotes)\n\nCSV Optional Values:\nsite_groups\nrf_template_id\n\nExample CSV:\n\nsite_name,site_address,site_groups,rf_template_id\n```\nAdonis,\"5592+S+Adonis+Pl,+Boise,+ID+83716\",xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx,xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\n```",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -2440,6 +2440,294 @@
 						}
 					],
 					"description": "This collection will use a the exported JSON payload of all sites to push a site webhook to each site.\nIt will not replace a webhook if it exists today.\n\nTo start, run the `getSites - Send and Download` to generate a json payload with all sites.\n\nRequired Environmental Variables:\n`apitoken` This your Mist dashboard API token.  It should have permissions to create sites\n\n\nEdit the payload of `updateSiteSettings - Webhook` to the webhook settings you want to use.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Manage Site Variables",
+					"item": [
+						{
+							"name": "getSiteIDByName_sitevars",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"console.log(`Starting Site ${pm.iterationData.get(\"site_name\")}`)",
+											"var nextRequest = null",
+											"var foundDup = false",
+											"var jsonData = JSON.parse(responseBody);",
+											"",
+											"",
+											"",
+											"if (!!pm.collectionVariables.get(\"c_site_name\")) {",
+											"    console.info(`searching for site ${pm.collectionVariables.get(\"c_site_name\")} `);",
+											"    for (var i = 0; i < jsonData.length; i++) {",
+											"    if (jsonData[i].name == pm.collectionVariables.get(\"c_site_name\")) {",
+											"        pm.collectionVariables.set(\"c_site_id\", jsonData[i].id)",
+											"        console.info(\"Found Site\")",
+											"        console.info(`Site ID = ${pm.collectionVariables.get(\"c_site_id\")}`)",
+											"        nextRequest = \"getSiteSettings_sitevars\"",
+											"        }",
+											"    }",
+											"}",
+											"else if (!!pm.iterationData.get(\"id\")) {",
+											"    pm.collection.set(\"c_site_id\", pm.iterationData.get(\"id\"))",
+											"    nextRequest = \"updateSiteSettings - Generic\"",
+											"};",
+											"",
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});",
+											"",
+											"pm.test(\"site_id is set\", function() {",
+											"  pm.expect(!!pm.collectionVariables.get(\"c_site_id\"));",
+											"});",
+											"",
+											"console.log(`setting next request ${nextRequest}`);",
+											"postman.setNextRequest(nextRequest);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Ensure all collection variables are removed before running.",
+											"pm.collectionVariables.unset(\"c_site_name\");",
+											"pm.collectionVariables.unset(\"c_site_id\");",
+											"//Handling of digit only sites with quotes.",
+											"var formatted_string = pm.iterationData.get(\"site_name\")",
+											"if (!!pm.iterationData.get(\"site_name\")) {",
+											"    if (formatted_string.includes(\"\\'\") || formatted_string.includes(\"\\\"\")) {",
+											"        console.info(\"stripping formatting of site_name\")",
+											"        formatted_string = formatted_string.replace(/'/g, \"\");",
+											"        formatted_string = formatted_string.replace(/\"/g, \"\");",
+											"        console.log(`Formatted Name ${formatted_string}`);",
+											"        pm.collectionVariables.set(\"c_site_name\", formatted_string)",
+											"    }",
+											"    else {",
+											"        pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"site_name\"))",
+											"    }",
+											"}",
+											"else if (!!pm.iterationData.get(\"name\")) {",
+											"    pm.collectionVariables.set(\"c_site_name\", pm.iterationData.get(\"name\"))",
+											"    }",
+											"console.info(`Site Name = ${pm.collectionVariables.get(\"c_site_name\")}`)"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/orgs/:orgr_id/sites",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"orgs",
+										":orgr_id",
+										"sites"
+									],
+									"variable": [
+										{
+											"key": "orgr_id",
+											"value": "{{org_id}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "getSiteSettings_sitevars",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"existing_vars = {}",
+											"if (\"vars\" in jsonData) {",
+											"    if (!!jsonData['vars']) {",
+											"        for (const key in jsonData['vars']) {",
+											"            existing_vars[key] = jsonData['vars'][key]",
+											"        }",
+											"    }",
+											"}",
+											"pm.collectionVariables.set(\"c_existing_vars\", JSON.stringify(existing_vars))",
+											"csv_data = pm.iterationData.toObject()",
+											"",
+											"for (const key in csv_data) {",
+											"    console.info(`Key: ${key} Value: ${csv_data[key]}`)",
+											"    if (key != \"site_name\" & !!csv_data[key]) {",
+											"        existing_vars[key] = csv_data[key]",
+											"    }",
+											"    else if (key != \"site_name\" & !!existing_vars[key]){",
+											"        if (key in existing_vars) {",
+											"            delete existing_vars[key]",
+											"        }",
+											"    }",
+											"}",
+											"",
+											"pm.collectionVariables.set(\"c_sitevars\", JSON.stringify(existing_vars))",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"setting"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{c_site_id}}",
+											"type": "string"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateSiteSettings_sitevars",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"function isJson(str) {",
+											"    console.info(`PAYLOAD: ${str}`)",
+											"    try {",
+											"        test = JSON.parse(str);",
+											"        console.info(`results: ${test}`)",
+											"        return true;",
+											"    } catch (e) {",
+											"        console.info(\"BAD JSON\")",
+											"        return false;",
+											"    }",
+											"}",
+											"",
+											"jsonPayload = pm.request.body.toString()",
+											"console.info(jsonPayload)"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function() {",
+											"  pm.expect(pm.response.code).to.equal(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"type": "text",
+										"value": "application/json"
+									},
+									{
+										"key": "X-CSRFToken",
+										"type": "text",
+										"value": "{{csrftoken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"vars\": {{c_sitevars}}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://{{host}}/api/v1/sites/:site_id/setting",
+									"protocol": "https",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"sites",
+										":site_id",
+										"setting"
+									],
+									"variable": [
+										{
+											"key": "site_id",
+											"value": "{{c_site_id}}"
+										}
+									]
+								},
+								"description": " #### Body Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n analytic.enabled|boolean|enable Advanced Analytic feature, default is false (using SUB-ANA license)\r\n app_waking|boolean|default is false\r\n auto_upgrade|object|auto upgrade\r\n bandwidth|int|channel width for the band, 20 / 40 / 80, 80 is only applicable for band_5\r\n ble_config|object|BLE config (see Site:BLE Config)\r\n ble|object|BLE asset settings\r\n brightness|int|0-255, default is 255\r\n channel|int|(primary) channel for the band, 0 means auto\r\n channels|list|list of channels, null or empty array means auto\r\n device_updown_threshold|int|sending AP_DISCONNECTED event in device-updowns only if AP_CONNECTED is not seen within the threshold, in minutes, 0 - 30, default is 0\r\n flags|list|name/val pair objects for location engine to use\r\n hello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\n hello_retries|int|between 2 and 30, default is 7\r\n led.enabled|boolean|whether to enable LED, default is true\r\n led|object|LED control\r\n model_specific|object|overwrites for a specific model. If a band is specified, it will shadow the default.\r\n mxtunnel.mtu|int|552-1500, default is 0\r\n ntp_servers|list|list of NTP servers\r\n persist_config_on_device|boolean|whether to store the config on AP, default is false\r\n power_max|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power_min|int|when power=0, min tx power to use, HW-specific values will be used if not set\r\n power|int|tx power of the radio, 0 mean auto\r\n preamble|string|short / long / auto, default is short\r\n proxy|object|Proxy Configuration for APs to talk to Mist\r\n radio_config|object|site RF settings\r\n remote_syslog|object|syslog parameters\r\n report_gatt|boolean|default is false; whether AP should periodically connect to BLE devices and report GATT device info (device name, manufacturer name, serial number, battery %, temperature, humidity)\r\n rogue|object|rogue detection parameters\r\n rtsa|object|managed mobility\r\n ssh_keys|list|when limit_ssh_access = true in Org Setting, list of SSH public keys provided by Mist Support to install onto APs (see Org:Setting)\r\n track_anonymous_devices|boolean|default is false; whether to track anonymous BLE assets (requires ‘track_asset’ enabled)\r\n track_asset|boolean|enable Asset Tracking, default is false (using SUB-AST license)\r\n vars|object|a dictionary of name->value, the vars can then be used in Wlans\r\n wifi|object|managed connectivity\r\n\r\n #### Wi-Fi Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|enable WIFI feature, default is true (using SUB-MAN license)\r\n enable_arp_spoof_check|boolean|when proxy_arp is enabled, check for arp spoofing. default is false\r\n enable_channel_144|boolean|whether to enable channel 144 (some older clients may not support in US), default is false\r\n enable_vna|boolean|enable Virtual Network Assistant, default is false (using SUB-VNA license)\r\n proxy_arp|string|default / enabled / disabled\r\n locate_unconnected|boolean|whether to locate unconnected clients, default is false\r\n mesh_enabled|boolean|whether to enable Mesh feature for the site, default is false\r\n disable_11k|boolean|whether to disable 11k, default is false\r\n \r\n #### Remote Syslog Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not remote syslog is enabled\r\n servers|list|list of syslog servers\r\n host|string|host to which syslog is sent\r\n protocol|string|udp / tcp, protocol to use for remote syslog, default is udp\r\n port|int|port on which to connect to host for syslog, default is 514 if protocol=udp, 6514 if protocol=tcp\r\n facility|string|kern / user / mail / daemon / auth / syslog / lpr / news / uucp / cron / authpriv / ftp / ntp / security / console / solaris-cron / local0 - local7, default is config\r\n severity|string|emerg / alert / crit / err / warning / notice / info / debug, default is info\r\n tag|string|optional, tag to attach to log record\r\n \r\n #### Rogue Detection Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether or not rogue detection is enabled\r\n honeypot_enabled|boolean|whether or not honeypot detection is enabled\r\n min_rssi|int|minimum RSSI for an AP to be considered rogue (ignoring APs that’s far away), default is -80. Minimum allowed value is -85.\r\n min_duration|int|minimum duration for a bssid to be considered rogue, maximum is 59, default is 10\r\n whitelisted_ssids|list|list of SSIDs to whitelist\r\n whitelisted_bssids|list|list of BSSIDs to whitelist\r\n \r\n #### Auto Upgrade Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n enabled|boolean|whether auto upgrade should happen, default is false (Note that Mist may auto-upgrade if the version is not supported)\r\n version|string|desired version, beta / stable / custom, default is stable\r\n time_of_day|string|any / HH:MM (24-hour format), upgrade will happen within up to 1-hour from this time\r\n day_of_week|string|any / mon / tue / wed / thu / fri / sat / sun\r\n custom_versions|object|custome versions for different models\r\n\r\n #### Engagement Parameter\r\n NOTE: if hours does not exist, it’s treated as everyday of the week, 00:00-23:59. Currently we don’t allow multiple ranges for the same day\r\n\r\nNOTE: default values for dwell_tags: passerby (1,300) bounce (301, 14400) engaged (14401, 28800) stationed (28801, 42000)\r\n\r\nNOTE: default values for dwell_tag_names: passerby = “Passerby”, bounce = “Visitor”, engaged = “Associates”, stationed = “Assets”\r\n\r\n\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n dwell_tags|object|add tags to visits within the duration (in seconds), available tags (passerby, bounce, engaged, stationed)\r\n max_dwell|int|max time, default is 43200(12h), max is 68400 (18h)\r\n min_dwell|int|min time, default is 0.\r\n hours|object|hours of operation filter, the available days (mon, tue, wed, thu, fri, sat, sun). Note: If the dow is not defined then it’s treated as 00:00-23:59.\r\n \r\n #### WIDS Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n threshold|int|count of events to trigger\r\nduration|int|window where a trigger will be detected and action to be taken (in seconds)\r\n\r\n #### Tunnel Parameter\r\n**Parameter**|**Type**|**Description** \r\n :-------------: |:-------------: |:-------------: \r\n hosts|list|hostnames or IPs where a Mist Tunnel will use as the Peer (i.e. they are reachable from AP)\r\nap_subnets|list|list of subnets where we allow AP to establish Mist Tunnels from\r\nprotocol|list|udp / ip, default is udp\r\nvlan_ids|list|list of vlan_ids that will be used\r\nhello_interval|float|in seconds, used as heartbeat to detect if a tunnel is alive. AP will try another peer after missing N hellos specified by hello_retries. between 1 and 300, default is 60 seconds\r\nhello_retries|int|between 2 and 30, default is 7"
+							},
+							"response": []
+						}
+					],
+					"description": "This collection will iterate through sites and set site variables according to the CSV.\n\nYou can source the data from a CSV with `site_name`. You cannot run this from CSV, as we expect to only find `site_name` and the site variables. Every field that is NOT `site_name` will be created as a variable.\n\n## Required Environmental Variables:\n\n`apitoken` This your Mist dashboard API token. It should have permissions to modify sites\n\n## Existing site variables:\n\nExisting Site variables will be left alone. The logic is such that if you don't define a site variable in your CSV and that site variable exists on the site, it will remain after the runner is finished.\n\n## Deleting Site Variables:\n\nIf you include the site variable column on the spreadsheet but leave the value blank, the runner will remove it from the output.\n\n## Example CSV\n\nThis CSV would set values for 2 sites:  \nJakeLab: {\"test1\": \"1.1.1.1\", \"test2\": 4, \"test3\": \"test\"}  \nTestSite2: {\"test1\": \"2.2.2.2\", \"test2\": 5}\n\n```\nsite_name,test1,test2,test3\nJakeLab,1.1.1.1,4,test\nTestSite2,2.2.2.2,5,\n\n\n```",
 					"event": [
 						{
 							"listen": "prerequest",
