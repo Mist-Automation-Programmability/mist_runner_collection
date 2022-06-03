@@ -1,4 +1,9 @@
 # mist_runner_collection
+
+# Archived: This collection is retired
+If you want the latest features/functionality, please go to https://www.postman.com/juniper-mist/workspace/mist-systems-s-public-workspace/overview and fork the Mist Runner Collection from there into your postman library.  We will not be updating these runners in git moving forward.
+
+
 This collection provides a number of Mist automation tasks that can be performed with Postman Runner.  Each folder represents a task.  The details can be found under the description of each subfolder.
 
 ### Current Tasks include:
