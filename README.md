@@ -1,3 +1,6 @@
+# REPOSITORY ARCHIVED
+Please visit the Postman [Mist Systems's Public Workspace](https://www.postman.com/juniper-mist/workspace/mist-systems-s-public-workspace/overview) to get the latest version
+
 # mist_runner_collection
 
 # Archived: This collection is retired
